@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en" style="color-scheme: light;"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<title>Pilotfish: Rethinking how agents browse | Nitin Reddy</title>
+<meta content="Fewer token-heavy observations, fewer model round trips and evidence-based waiting where a page allows them, and the points where each shortcut stops." name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500&amp;display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --paper:#fbfbf9; --surface:#ffffff; --sunk:#f1f2ee; --mock:#ffffff; --mock-chrome:#f4f5f2;
+  --ink:#16181b; --soft:#565b62; --faint:#6a6f75; --line:#e1e2dd; --line-strong:#c9cbc5;
+  --accent:#0d6b80; --accent-ink:#0a5a6c; --accent-soft:#e1eff2; --on-accent:#ffffff; --link-line:#9cc7d1;
+  --model:#5b4fc4; --model-ink:#40368f; --model-soft:#eeecfb; --model-line:#bdb6ee;
+  --chg:#c27a12; --chg-ink:#8a4f04; --chg-bg:#fcf0da;
+  --new:#1f8a49; --new-ink:#156536; --new-bg:#e2f3e8;
+  --gone:#c0392b; --gone-ink:#9a2a1e; --gone-bg:#fbe8e5;
+  --ctx:#6e737a; --ctx-bg:#eef0ec;
+  --code-bg:#f5f6f3; --code-ink:#24282c; --code-line:#e1e2dd; --code-rule:#c9cbc5;
+  --logo-ring:transparent;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  background:var(--paper);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#111315; --surface:#181b1e; --sunk:#202428; --mock:#1b1f22; --mock-chrome:#202428;
+    --ink:#e9eae7; --soft:#a8adb3; --faint:#80868c; --line:#2b3035; --line-strong:#3d434a;
+    --accent:#4fb5c9; --accent-ink:#86d3e1; --accent-soft:#14323a; --on-accent:#071a1f; --link-line:#2f6a77;
+    --model:#9d94f0; --model-ink:#c3bdf7; --model-soft:#24214a; --model-line:#4d4691;
+    --chg:#e0a145; --chg-ink:#f2c47f; --chg-bg:#382a12;
+    --new:#4fc57b; --new-ink:#86dca5; --new-bg:#12301f;
+    --gone:#ec7b6d; --gone-ink:#f4a79d; --gone-bg:#3a1916;
+    --ctx:#9aa0a6; --ctx-bg:#23272b;
+    --code-bg:#0e1012; --code-ink:#dde0dc; --code-line:#262b30; --code-rule:#3a4047;
+    --logo-ring:#3a4047;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111315; --surface:#181b1e; --sunk:#202428; --mock:#1b1f22; --mock-chrome:#202428;
+  --ink:#e9eae7; --soft:#a8adb3; --faint:#80868c; --line:#2b3035; --line-strong:#3d434a;
+  --accent:#4fb5c9; --accent-ink:#86d3e1; --accent-soft:#14323a; --on-accent:#071a1f; --link-line:#2f6a77;
+  --model:#9d94f0; --model-ink:#c3bdf7; --model-soft:#24214a; --model-line:#4d4691;
+  --chg:#e0a145; --chg-ink:#f2c47f; --chg-bg:#382a12;
+  --new:#4fc57b; --new-ink:#86dca5; --new-bg:#12301f;
+  --gone:#ec7b6d; --gone-ink:#f4a79d; --gone-bg:#3a1916;
+  --ctx:#9aa0a6; --ctx-bg:#23272b;
+  --code-bg:#0e1012; --code-ink:#dde0dc; --code-line:#262b30; --code-rule:#3a4047;
+  --logo-ring:#3a4047;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17.5px;line-height:1.66;overflow-x:clip;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.page{max-width:688px;margin:0 auto;padding:0 24px 72px}
+.masthead{display:flex;align-items:center;gap:10px;padding:22px 0;border-bottom:1px solid var(--line)}
+.masthead svg{width:26px;height:26px;border-radius:7px;flex:none;box-shadow:0 0 0 1px var(--logo-ring)}
+.masthead .name{font-weight:600;font-size:16px;letter-spacing:.01em}
+.masthead .sect{margin-left:auto;font-size:14px;color:var(--soft)}
+.hero{padding:68px 0 34px}
+h1{font-family:var(--serif);font-weight:500;font-size:clamp(36px,7.4vw,64px);line-height:1.04;letter-spacing:-.022em;margin:0 0 22px;text-wrap:balance}
+h1 span{display:block}
+.deck{font-family:var(--serif);font-size:clamp(20px,3.3vw,24.5px);line-height:1.38;color:var(--soft);margin:0 0 26px;max-width:32em}
+.meta{display:flex;flex-wrap:wrap;row-gap:4px;font-size:14px;color:var(--soft);margin:0}
+.meta span+span::before{content:"";display:inline-block;width:1px;height:12px;background:var(--line-strong);margin:0 12px;vertical-align:-1px}
+h2{font-family:var(--serif);font-weight:500;font-size:clamp(27px,4.4vw,35px);line-height:1.14;letter-spacing:-.016em;margin:68px 0 14px;text-wrap:balance}
+h3.sub{font-family:var(--sans);font-size:18px;font-weight:600;line-height:1.3;margin:38px 0 10px}
+p{margin:0 0 18px}
+.ask{font-family:var(--serif);font-size:23px;line-height:1.35;margin:26px 0}
+strong{font-weight:600}
+a{color:var(--accent-ink);text-decoration:underline;text-decoration-color:var(--link-line);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{text-decoration-color:currentColor}
+a:focus-visible,button:focus-visible,summary:focus-visible,[tabindex="-1"]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+code{font-family:var(--mono);font-size:.84em;background:var(--sunk);padding:.1em .38em;border-radius:5px;white-space:nowrap}
+ul.tight{padding-left:22px;margin:0 0 18px}
+ul.tight li{margin:6px 0;padding-left:2px}
+ul.rules li b{font-weight:600}
+ol.steps{padding-left:24px;margin:0 0 14px}
+ol.steps li{margin:5px 0;padding-left:4px}
+pre.snip{margin:4px 0 18px;padding:12px 14px;background:var(--code-bg);border:1px solid var(--code-line);border-radius:10px;font:13px/1.55 var(--mono);color:var(--code-ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.snip-k{display:block;font:600 12px/1.4 var(--sans);color:var(--soft);margin-bottom:4px}
+
+/* Author row and contents */
+.byline{display:flex;align-items:center;flex-wrap:wrap;gap:12px 14px}
+.av-img{display:block;width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;background:var(--sunk);box-shadow:0 0 0 1px var(--line)}
+.by-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.by-name{font-weight:600;font-size:15.5px;line-height:1.3;color:var(--ink)}
+.by-meta{font-size:13.5px;line-height:1.3;color:var(--soft)}
+.by-meta span+span::before{content:"";display:inline-block;width:1px;height:11px;background:var(--line-strong);margin:0 10px;vertical-align:-1px}
+.by-li{margin-left:auto;display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 16px;border:1px solid var(--line-strong);border-radius:999px;font:600 14px/1 var(--sans);color:var(--accent-ink);text-decoration:none;background:var(--surface)}
+.by-li:hover{border-color:var(--accent)}
+.by-li svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.toc{margin:30px 0 6px;padding:18px 0 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.toc .toc-h{font:600 13px/1.3 var(--sans);letter-spacing:0;color:var(--soft);margin:0 0 8px}
+.toc-list{list-style:none;padding:0;margin:0;columns:2;column-gap:28px}
+.toc-list li{break-inside:avoid;margin:0}
+.toc-list a{display:grid;grid-template-columns:20px minmax(0,1fr);gap:0 8px;min-height:44px;padding:8px 8px;margin:0 -8px;border-radius:8px;text-decoration:none;color:var(--ink)}
+.toc-list a:hover{background:var(--sunk)}
+.toc-n{font:500 13px/1.6 var(--mono);color:var(--faint)}
+.toc-t{font-weight:600;font-size:15.5px;line-height:1.35;color:var(--accent-ink);text-decoration:underline;text-decoration-color:var(--link-line);text-decoration-thickness:1px;text-underline-offset:3px}
+.toc-list a:hover .toc-t{text-decoration-color:currentColor}
+.toc-t small{display:inline-block;width:100%;font-weight:400;font-size:13.5px;line-height:1.4;color:var(--soft);margin-top:2px;text-decoration:none}
+h2[id],h3[id],figure[id]{scroll-margin-top:24px}
+.reflist li.is-target{background:var(--accent-soft)}
+@media (max-width:640px){.toc-list{columns:1}}
+@media (max-width:480px){.by-li{margin-left:66px}}
+
+/* Inline figures */
+.fig{margin:26px 0 30px}
+.fig figcaption{font-size:14px;line-height:1.55;color:var(--soft);margin-top:10px}
+.sx{display:grid;grid-template-columns:minmax(0,1.55fr) 40px minmax(0,1fr);align-items:center;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:16px}
+.sx-h{display:block;font-size:12.5px;font-weight:600;color:var(--soft);margin-bottom:8px}
+.sx pre{margin:0;font:12.5px/1.6 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;color:var(--faint)}
+.sx .kp{color:var(--ink);background:var(--accent-soft);border-radius:3px}
+.sx pre.out{color:var(--code-ink);background:var(--code-bg);border:1px solid var(--code-line);padding:10px 12px;border-radius:9px}
+.sx .rf{color:var(--accent-ink);font-weight:500}
+.sx-ar{display:flex;justify-content:center}
+.sx-ar svg,.ac svg{width:28px;height:14px;fill:none;stroke:var(--line-strong);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.rd{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px 18px}
+.rd-row{display:grid;grid-template-columns:180px minmax(0,1fr);gap:4px 14px;align-items:center;padding:7px 0;font-size:14.5px}
+.rd-bar{display:flex;align-items:center;gap:10px;font:500 12.5px/1 var(--mono);color:var(--soft)}
+.rd-bar i{display:block;height:14px;border-radius:3px;flex:none;width:calc((100% - 150px) * var(--w));background:var(--line-strong)}
+.rd-bar.k i{background:var(--accent)} .rd-bar.k{color:var(--ink)}
+
+/* Prediction questions */
+.q{margin:28px 0 30px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:4px 14px 14px 4px;background:var(--surface);padding:18px 20px}
+.q-k{font-size:13px;font-weight:600;color:var(--accent-ink);margin:0 0 6px}
+.q-p{font-size:16.5px;font-weight:600;line-height:1.45;margin:0 0 14px}
+.q-opts{display:grid;gap:8px}
+.q-opts button{min-height:46px;text-align:left;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);border-radius:10px;padding:10px 14px;font:400 15.5px/1.4 var(--sans);cursor:pointer;transition:border-color .15s,background .2s}
+.q-opts button:hover{border-color:var(--ink)}
+.q-opts button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.q-opts button.right{border-color:var(--new);background:var(--new-bg)}
+.q-opts button.right::after{content:"Answer";font-size:12.5px;font-weight:600;color:var(--new-ink);margin-left:10px;white-space:nowrap}
+.q-opts button.wrong{background:var(--chg-bg);border-color:var(--chg)}
+.q-fb{margin-top:14px;font-size:15.5px;line-height:1.58}
+.q-fb:empty{display:none}
+.q-fb p{margin:0}
+.q-fb .go{margin-top:10px}
+
+/* Wide figures */
+.viz{width:min(944px,calc(100vw - 32px));margin:36px 0 42px calc((100% - min(944px,calc(100vw - 32px))) / 2);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px}
+.viz.text{width:auto;margin:26px 0 22px}
+.viz-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:16px}
+.viz-tag{font-size:12.5px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);padding:3px 10px;border-radius:999px}
+.viz-title{font-family:var(--serif);font-weight:500;font-size:22px;line-height:1.25;margin:0}
+.viz-cap{font-size:15px;line-height:1.55;color:var(--soft);margin:14px 0 0;min-height:3.1em}
+.tiny{font-size:12.5px;color:var(--faint)}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button,.btn{min-height:44px;border:1px solid var(--line-strong);background:var(--surface);color:var(--soft);border-radius:11px;padding:8px 15px;font:500 14.5px/1.25 var(--sans);cursor:pointer;text-align:left;transition:border-color .15s,color .15s,background .15s}
+.seg button:hover,.btn:hover{color:var(--ink);border-color:var(--ink)}
+.seg button[aria-pressed="true"]{color:var(--ink);border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);background:var(--sunk)}
+.btn{color:var(--ink);font-weight:600;text-align:center;min-width:76px}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn.primary:hover{color:var(--paper);opacity:.88}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:16px}
+.ctl .status{font-size:13.5px;color:var(--soft);min-width:10em}
+.ctl .tiny{margin-left:auto}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;list-style:none;padding:0;margin:14px 0 0;font-size:13px;color:var(--soft)}
+.legend li{display:flex;align-items:center;gap:7px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;flex:none}
+.sw-chg{background:var(--chg-bg);box-shadow:inset 3px 0 0 var(--chg)}
+.sw-new{background:var(--new-bg);box-shadow:inset 3px 0 0 var(--new)}
+.sw-gone{background:var(--gone-bg);box-shadow:inset 3px 0 0 var(--gone)}
+.sw-ctx{background:var(--ctx-bg);box-shadow:inset 3px 0 0 var(--ctx)}
+.sw-none{height:0;width:18px;border-top:1.5px dashed var(--code-rule);border-radius:0}
+
+/* Visual 1: page and reply */
+.track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:relative;margin:2px 0 0}
+.track::before{content:"";position:absolute;left:12.5%;right:12.5%;top:23px;border-top:1.5px solid var(--line-strong)}
+.tk{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:8px 4px 6px;min-height:44px;cursor:pointer;color:var(--ink);font:inherit;text-align:center;border-radius:12px}
+.tk:hover{background:var(--sunk)}
+.tk-n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1.5px solid var(--line-strong);font:600 13px/1 var(--mono);color:var(--soft);position:relative;z-index:1;margin-bottom:3px;transition:background .2s,border-color .2s,color .2s}
+.tk[aria-pressed="true"] .tk-n{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.tk-l{font-weight:600;font-size:14.5px;line-height:1.25}
+.tk-k{font-size:12.5px;line-height:1.3;color:var(--soft);display:flex;align-items:center;justify-content:center;gap:6px}
+.tk-k::before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
+.k-full::before{background:var(--accent)} .k-delta::before{background:var(--chg)} .k-none::before{box-shadow:inset 0 0 0 1.5px var(--faint)}
+.tk-base{font:600 11.5px/1 var(--sans);color:var(--on-accent);background:var(--accent);padding:4px 8px;border-radius:999px;margin-top:4px;visibility:hidden}
+.tk.is-base .tk-base{visibility:visible}
+.rp{display:grid;grid-template-columns:minmax(0,1fr) 44px minmax(0,1.3fr);margin-top:20px}
+.colh{font-size:13px;font-weight:600;color:var(--soft);padding:0 2px 8px}
+.L,.R{min-width:0;padding:6px 16px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.L{background:var(--mock);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.R{background:var(--code-bg);border-left:1px solid var(--code-line);border-right:1px solid var(--code-line)}
+.L.head{background:var(--mock-chrome);border-top:1px solid var(--line);border-radius:14px 14px 0 0;padding-top:12px;padding-bottom:12px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+.R.head{border-top:1px solid var(--code-line);border-radius:14px 14px 0 0;padding-top:12px;padding-bottom:12px;margin-bottom:6px;align-items:flex-start;gap:8px;border-bottom:1px solid var(--code-line)}
+.L.last{border-bottom:1px solid var(--line);border-radius:0 0 14px 14px;padding-bottom:14px}
+.R.last{border-bottom:1px solid var(--code-line);border-radius:0 0 14px 14px;padding-bottom:14px}
+.C{display:flex;align-items:center;justify-content:center;min-width:0}
+.cn{width:38px;height:14px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.cn-f{color:var(--line-strong)} .cn-ctx{color:var(--ctx)} .cn-chg{color:var(--chg)} .cn-new{color:var(--new)} .cn-gone{color:var(--gone)}
+.badge{font:600 12.5px/1 var(--sans);padding:6px 10px;border-radius:999px;white-space:nowrap}
+.b-full{background:var(--accent);color:var(--on-accent)}
+.b-delta{background:var(--chg-bg);color:var(--chg-ink);box-shadow:inset 0 0 0 1px var(--chg)}
+.b-none{background:var(--sunk);color:var(--soft);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.rh-text{font-size:13.5px;color:var(--soft)}
+.ln{display:block;font-family:var(--mono);font-size:12.5px;line-height:1.5;color:var(--code-ink);white-space:pre-wrap;overflow-wrap:anywhere;padding:2px 7px 2px 1.7em;text-indent:-1.15em;border-radius:5px}
+.ln-head{padding:0;text-indent:0;font-weight:500}
+.ln-ctx{color:var(--ctx);background:var(--ctx-bg)}
+.ln-chg{background:var(--chg-bg);color:var(--chg-ink);box-shadow:inset 3px 0 0 var(--chg)}
+.ln-new{background:var(--new-bg);color:var(--new-ink);box-shadow:inset 3px 0 0 var(--new)}
+.ln-gone{background:var(--gone-bg);color:var(--gone-ink);box-shadow:inset 3px 0 0 var(--gone)}
+.ln-note{color:var(--faint)}
+.ln-none{height:0;padding:0;margin:9px 7px;border-top:1.5px dashed var(--code-rule)}
+.mk{position:relative;font-size:13.5px;line-height:1.3;border-radius:8px;transition:box-shadow .3s,background .3s}
+.ref{font:500 10.5px/1 var(--mono);font-style:normal;color:var(--faint);margin-left:6px;vertical-align:1px;white-space:nowrap}
+.mk-url{font:12.5px/1.2 var(--mono);color:var(--soft);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;overflow-wrap:anywhere}
+.mk-nav{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 0}
+.mk-logo{font-weight:700;letter-spacing:-.01em}
+.mk-a{color:var(--accent-ink);font-size:13px}
+.mk-h1{font-family:var(--serif);font-size:21px;font-weight:500;padding:2px 2px}
+.mk-in{border:1.5px solid var(--line-strong);background:var(--surface);padding:8px 10px;display:flex;align-items:center;min-height:38px}
+.mk-ph{color:var(--faint)} .mk-val{color:var(--ink)}
+.mk-caret{display:inline-block;width:1.5px;height:16px;background:var(--accent);margin-left:2px;vertical-align:middle}
+.mk-in .ref{margin-left:auto;padding-left:6px}
+.mk-sugg{border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;box-shadow:0 8px 18px -12px rgba(0,0,0,.35)}
+.mk-sugg span{padding:6px 10px}
+.mk-sugg span+span{border-top:1px solid var(--line)}
+.mk-recent{font-size:13px;color:var(--accent-ink);padding:3px 4px;align-self:flex-start}
+.mk-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mk-btn{border:1px solid var(--line-strong);border-radius:8px;padding:7px 10px;background:var(--surface);font-size:13px}
+.mk-cta{background:var(--accent);color:var(--on-accent);text-align:center;padding:9px;font-weight:600;border-radius:8px}
+.mk-cta .ref{color:inherit;opacity:.75}
+.mk-pop{padding:2px 0}
+.mk-h2{display:block;font-weight:600;font-size:13px;margin-bottom:7px}
+.mk-chips{display:flex;flex-wrap:wrap;gap:6px}
+.mk-chips span{border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:12.5px;color:var(--accent-ink);background:var(--surface)}
+.mk-more{font-size:12.5px;color:var(--faint);padding:2px}
+.mk-card{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border:1px solid var(--line);padding:9px 11px;background:var(--surface)}
+.mk-card b{font-weight:600}
+.mk-price{color:var(--soft);font-size:12.5px;white-space:nowrap}
+.mk-sort{align-self:flex-start}
+.L.hl-chg > .mk{box-shadow:0 0 0 2px var(--chg)}
+.L.hl-new > .mk{box-shadow:0 0 0 2px var(--new)}
+.L.hl-ctx > .mk{background:var(--ctx-bg)}
+.mk.ghost{border:1.5px dashed var(--gone);background:var(--gone-bg);color:var(--gone-ink);text-decoration:line-through;padding:4px 10px}
+.mk.ghost .ref{color:var(--gone-ink)}
+.rp.anim .cn path{stroke-dasharray:44;stroke-dashoffset:44;animation:draw .5s ease-out forwards;animation-delay:calc(var(--d,0) * 75ms)}
+.rp.anim .R .ln:not(.ln-none):not(.ln-head){animation:lnin .45s ease-out both;animation-delay:calc(var(--d,0) * 75ms + 260ms)}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes lnin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+
+.illus{display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.4;color:var(--soft);margin:0 0 16px}
+.illus::before{content:'';flex:none;width:18px;height:1.5px;background:var(--line-strong)}
+.mk-tr{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(74px,auto);gap:4px 10px;align-items:center;padding:3px 2px}
+.mk-tr .c1{display:flex;flex-direction:column;min-width:0}
+.mk-tr .c1 b{font-weight:600;font-size:13px}
+.mk-tr .inv{font-size:12px;color:var(--accent-ink)}
+.mk-tr .due{font-style:normal;color:var(--faint);margin-left:4px}
+@media (max-width:480px){.mk-tr .inv{white-space:nowrap}.mk-tr .due{display:block;margin-left:0}}
+.mk-tr .c2{font-size:12px;color:var(--soft);white-space:nowrap}
+.mk-tr .c2.od{color:var(--ink);font-weight:600}
+.mk-tr .c3{font:500 12.5px/1.2 var(--mono);text-align:right;color:var(--ink);white-space:nowrap}
+.mk-th{font-size:11.5px;color:var(--soft);font-weight:600;border-bottom:1px solid var(--line);padding-bottom:6px}
+.mk-th .c3{font:600 11.5px/1.2 var(--sans);color:var(--soft)}
+
+/* Visual 2: sequence lanes */
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:20px}
+.lane{min-width:0}
+.lane+.lane{border-left:1px solid var(--line);padding-left:28px}
+.lane h4{font:600 16px/1.3 var(--sans);margin:0}
+.lane .sub{font-size:13.5px;color:var(--soft);margin:2px 0 12px}
+.lg{display:grid;grid-template-columns:86px minmax(34px,1fr) minmax(0,1.7fr);grid-auto-rows:minmax(58px,auto)}
+.lg .hd{grid-row:1;font-size:12.5px;font-weight:600;color:var(--soft);padding-bottom:8px;min-height:0}
+.lg .hd.m{grid-column:1;text-align:center}
+.lg .hd.b{grid-column:3;padding-left:2px}
+.lg{grid-template-rows:auto}
+.mr{grid-column:1;position:relative;display:flex;align-items:center;justify-content:center}
+.mr::before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1.5px dashed var(--model-line)}
+.mr.first::before{top:50%} .mr.endrow::before{bottom:50%}
+.call{position:relative;z-index:1;background:var(--model-soft);color:var(--model-ink);border:1.5px solid var(--model-line);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:600;white-space:nowrap;transition:opacity .3s}
+.call.idle{opacity:.38}
+.cc{grid-column:2;display:flex;flex-direction:column;justify-content:center;gap:13px;padding:0 9px 0 4px}
+.arw{position:relative;display:block;height:0;border-top:1.6px solid currentColor;transition:opacity .3s}
+.arw::after{content:"";position:absolute;top:-5.6px;border-style:solid}
+.arw.go{color:var(--model)} .arw.go::after{right:-2px;border-width:5px 0 5px 8px;border-color:transparent transparent transparent currentColor}
+.arw.back{color:var(--accent);margin-left:4px} .arw.back::after{left:-4px;border-width:5px 8px 5px 0;border-color:transparent currentColor transparent transparent}
+.arw.dim{opacity:.18} .arw.none{visibility:hidden}
+.bs{grid-column:3;position:relative;padding:8px 0 8px 28px;display:flex;flex-direction:column;justify-content:center;min-width:0;transition:opacity .3s}
+.bs::before{content:"";position:absolute;left:9px;top:0;bottom:0;border-left:2px solid var(--line)}
+.bs.first::before{top:50%} .bs.endrow::before{bottom:50%}
+.bs.chain::before{border-color:var(--accent)}
+.bs::after{content:"";position:absolute;left:3px;top:50%;margin-top:-7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--line-strong);transition:background .3s,border-color .3s}
+.bs.ok::after{background:var(--new);border-color:var(--new)}
+.bs.warn::after{background:var(--chg);border-color:var(--chg)}
+.bs b{font-size:14px;font-weight:600;line-height:1.25}
+.bs .st{font-size:12.5px;line-height:1.3;color:var(--soft)}
+.bs.ok .st{color:var(--new-ink)} .bs.warn .st{color:var(--chg-ink);font-weight:600}
+.bs.idle{opacity:.42} .bs.notrun{opacity:.5} .bs.notrun::after{border-style:dashed}
+.stats{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.stats div{display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--soft)}
+.stats b{font:600 20px/1 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums}
+.stats .m b{color:var(--model-ink)}
+.lk{width:26px;height:12px;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.lk .a1{stroke:var(--model)} .lk .a2{stroke:var(--accent)}
+.stopline{margin:14px 0 0;background:var(--chg-bg);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--chg-ink)}
+.stopline code{display:block;white-space:pre-wrap;overflow-wrap:anywhere;background:none;padding:0;margin-top:3px;color:var(--chg-ink);font-size:12.5px}
+.stopline[hidden]{display:none}
+
+/* Visual 3: evidence ledger */
+.act-line{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;font-size:14px;color:var(--soft);margin:18px 0 10px}
+.act-line b{font:500 14px/1.3 var(--mono);color:var(--ink);background:var(--sunk);padding:6px 11px;border-radius:8px;transition:background .3s,box-shadow .3s}
+.act-line.on b{background:var(--accent-soft);color:var(--accent-ink);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.mxr{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) 22px minmax(0,1fr);align-items:center;column-gap:10px;padding:9px 12px;border-top:1px solid var(--line);border-left:3px solid transparent;transition:border-color .35s,background .35s}
+.mxr.h{font-size:12.5px;color:var(--faint);font-weight:600;border-top:0;padding-top:0;padding-bottom:6px}
+.mxr.h .on{color:var(--ink)}
+.mx-l{font-size:14px;line-height:1.3}
+.mxr.key-ok{border-left-color:var(--new);background:var(--new-bg)}
+.mxr.key-warn{border-left-color:var(--chg);background:var(--chg-bg)}
+.mxa{width:22px;height:12px;fill:none;stroke:var(--line-strong);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.35;transition:opacity .3s}
+.mxa.on{opacity:1}
+.pill{justify-self:start;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;line-height:1.25;border-radius:999px;padding:4px 10px;transition:background .3s,color .3s;max-width:100%}
+.p-idle{color:var(--faint);background:var(--sunk)}
+.p-wait{color:var(--faint);background:transparent;font-weight:500}
+.p-active{color:var(--accent-ink);background:var(--accent-soft)}
+.p-active::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none;animation:pulse 1.1s ease-in-out infinite}
+.p-seen{color:var(--accent-ink);background:var(--accent-soft)}
+.p-seen::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;flex:none;opacity:.45}
+.p-done{color:var(--new-ink);background:var(--new-bg)}
+.p-warn{color:var(--chg-ink);background:var(--chg-bg);box-shadow:inset 0 0 0 1px var(--chg)}
+.p-ign{color:var(--faint);background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong)}
+@keyframes pulse{50%{opacity:.25}}
+.verdict{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-top:12px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);transition:background .35s,border-color .35s}
+.verdict .k{font-size:12.5px;color:var(--soft);font-weight:600}
+.verdict b{font-size:17px}
+.verdict span:last-child{font-size:14px;color:var(--soft)}
+.verdict.ok{border-color:var(--new);background:var(--new-bg)} .verdict.ok b{color:var(--new-ink)}
+.verdict.warn{border-color:var(--chg);background:var(--chg-bg)} .verdict.warn b{color:var(--chg-ink)}
+.verdict.idle b{color:var(--faint)}
+
+/* Benchmark */
+.bm-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;font-size:13.5px;color:var(--soft);margin:-4px 0 14px}
+.bm-legend span{display:flex;align-items:center;gap:7px}
+.sw-pf{background:var(--accent)} .sw-pw{background:var(--line-strong)}
+.bm-legend .note{margin-left:auto;color:var(--faint);font-size:13px}
+.bm-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:6px 18px;padding:12px 0;border-top:1px solid var(--line)}
+.bm-m b{display:block;font-size:14.5px;font-weight:600}
+.bm-m span{font-size:13px;color:var(--accent-ink);font-weight:600}
+.bm-bars{display:grid;gap:5px;align-content:center}
+.bar{display:flex;align-items:center;gap:8px;font:500 12.5px/1 var(--mono);color:var(--soft);font-variant-numeric:tabular-nums}
+.bar i{display:block;height:13px;border-radius:3px;width:calc((100% - 92px) * var(--w));flex:none}
+.bar.pf i{background:var(--accent)} .bar.pf{color:var(--ink)}
+.bar.pw i{background:var(--line-strong)}
+.bm-method{font-size:13.5px;line-height:1.55;color:var(--soft);margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+
+details.notes{margin:56px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 0}
+details.notes summary{cursor:pointer;font-weight:600;font-size:15px;min-height:44px;display:flex;align-items:center;list-style:none}
+details.notes summary::-webkit-details-marker{display:none}
+details.notes summary::before{content:"";width:7px;height:7px;border-right:1.6px solid var(--soft);border-bottom:1.6px solid var(--soft);transform:rotate(-45deg);margin:0 12px 0 3px;transition:transform .2s}
+details.notes[open] summary::before{transform:rotate(45deg)}
+details.notes p,details.notes li{font-size:14.5px;color:var(--soft)}
+details.notes ul{padding-left:20px;margin:0 0 14px}
+details.notes li{margin:5px 0}
+
+
+/* Byline, references, try it, author */
+.disclose{font-size:14px;color:var(--soft);margin:8px 0 0}
+.meta a{color:var(--ink);text-decoration-color:var(--line-strong)}
+.cite{font:600 .68em/1 var(--sans);vertical-align:.5em;margin-left:2px;padding:0 1px;color:var(--accent-ink);text-decoration:none;white-space:nowrap}
+.cite:hover{text-decoration:underline}
+.fig-src{font-size:13px;color:var(--soft);margin:10px 0 0}
+.try{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:20px 22px;margin:6px 0 10px}
+.try p{font-size:16px}
+.try-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin-bottom:12px}
+.try-head svg{width:24px;height:24px;border-radius:6px;flex:none;box-shadow:0 0 0 1px var(--logo-ring)}
+.try-head b{font-weight:600;font-size:16px}
+.try-head span{font-size:13px;color:var(--soft);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.cmd{display:flex;align-items:stretch;gap:8px;margin:2px 0 16px}
+.cmd pre{flex:1;min-width:0;margin:0;background:var(--code-bg);border:1px solid var(--code-line);border-radius:10px;padding:11px 14px;font:13px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;color:var(--code-ink)}
+.try-links{list-style:none;padding:0;margin:0 0 16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.try-links a{display:flex;flex-direction:column;gap:2px;min-height:44px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);height:100%}
+.try-links a:hover{border-color:var(--accent)}
+.try-links b{font-weight:600;font-size:14.5px;color:var(--accent-ink)}
+.try-links span{font-size:13px;color:var(--soft);overflow-wrap:anywhere}
+.try-note{color:var(--soft);margin:0}
+.refs{margin-top:64px}
+.refs h2{margin-top:0}
+.refs-note{font-size:15px;color:var(--soft)}
+.refs-h{font:600 15px/1.3 var(--sans);margin:26px 0 6px}
+.reflist{list-style:none;padding:0;margin:0}
+.reflist li{display:grid;grid-template-columns:2.6em minmax(0,1fr);padding:12px 10px 12px 6px;border-top:1px solid var(--line);border-radius:8px;scroll-margin-top:20px;transition:background .4s}
+.reflist li:target{background:var(--accent-soft)}
+.ref-n{font:600 13px/1.7 var(--mono);color:var(--accent-ink)}
+.reflist .rt{font-weight:600;font-size:15.5px}
+.reflist .src{display:block;font:12.5px/1.55 var(--mono);color:var(--soft);overflow-wrap:anywhere;margin-top:3px}
+.reflist .src a{color:var(--soft)}
+.reflist .what{display:block;font-size:14.5px;line-height:1.55;color:var(--soft);margin-top:4px}
+.author{display:flex;gap:14px;align-items:flex-start;margin-top:56px;padding-top:22px;border-top:1px solid var(--line)}
+.author .av{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);border:1px solid var(--line);font:600 14px/1 var(--serif);color:var(--ink)}
+.author p{margin:0;font-size:15px;color:var(--soft)}
+.author .au-name{font-weight:600;color:var(--ink);margin-bottom:2px}
+@media (max-width:560px){.try-links{grid-template-columns:1fr}.cmd{flex-direction:column}.try{padding:16px}}
+@media (max-width:480px){.meta span+span::before{display:none}.meta{column-gap:16px}.reflist li{grid-template-columns:2.3em minmax(0,1fr);padding-left:0;padding-right:4px}}
+@media (max-width:760px){
+  .viz{padding:18px;border-radius:16px}
+  .lanes{grid-template-columns:1fr;gap:22px}
+  .lane+.lane{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:20px}
+  .rp{grid-template-columns:minmax(0,1fr)}
+  .rp .colh-C,.rp .C{display:none}
+  .rp .colh-L{order:0} .rp .L{order:1} .rp .colh-R{order:2;margin-top:18px} .rp .R{order:3}
+}
+@media (max-width:640px){
+  .sx{grid-template-columns:minmax(0,1fr)}
+  .sx-ar{height:30px} .sx-ar svg{transform:rotate(90deg)}
+  .bm-row{grid-template-columns:1fr}
+  .rd-row{grid-template-columns:1fr}
+  .ctl .tiny{margin-left:0;flex-basis:100%}
+  .tk-l{font-size:13.5px}
+  .tk-k{font-size:12px}
+}
+@media (max-width:480px){
+  body{font-size:16.5px}
+  .page{padding:0 18px 64px}
+  .hero{padding:48px 0 28px}
+  .viz{padding:14px;border-radius:14px}
+  .q{padding:16px}
+  .L,.R{padding-left:12px;padding-right:12px}
+  .lg{grid-template-columns:72px minmax(30px,1fr) minmax(0,1.9fr)}
+  .call{padding:4px 9px;font-size:12.5px}
+  .bs{padding-left:26px}
+  .mxr{grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);row-gap:6px;padding:9px 8px}
+  .mxr > .mx-l{grid-column:1 / -1}
+  .mxr.h > span:first-child{display:none}
+  .viz-title{font-size:20px}
+  .ask{font-size:21px}
+}
+@media (max-width:400px){.tk-k::before{display:none}.tk-l{font-size:12.5px}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="masthead">
+<span class="name">Nitin Reddy</span>
+</header>
+<main>
+<article>
+<header class="hero">
+<h1>Pilotfish: Rethinking how agents browse</h1>
+<p class="deck">Fewer token-heavy observations, fewer model round trips and evidence-based waiting where a page allows them, and the points where each shortcut stops.</p>
+<div class="byline">
+<img alt="Nitin Reddy" class="av-img" height="52" src="data:image/jpeg;base64,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" width="52"/>
+<div class="by-txt"><span class="by-name">Nitin Reddy</span><span class="by-meta"><span>19 November 2026</span><span>10 min read</span></span></div>
+<a aria-label="Nitin Reddy on LinkedIn" class="by-li" href="https://www.linkedin.com/in/nitin-reddy-devloper/" rel="noopener noreferrer me author" target="_blank">LinkedIn<svg aria-hidden="true" viewbox="0 0 14 14"><path d="M4.5 2.5H11.5V9.5M11 3L3 11"></path></svg></a>
+</div>
+</header>
+<p class="illus">Illustrative workflow: the portal, customer and figures are fictional.</p>
+<p>Acme Fasteners owes $8,400.00 on overdue invoice INV-1042, and a partial payment posted this morning. Before anyone chases the rest, an agent in the receivables portal has to:</p>
+<ol class="steps">
+<li>match the payment to the invoice;</li>
+<li>read the refreshed outstanding balance, not the stale list figure;</li>
+<li>check that the invoice is neither disputed nor already covered by a recent reminder;</li>
+<li>prepare a reminder draft with the confirmed amount for a reviewer, and stop before Send.</li>
+</ol>
+<p>The draft depends on every one of those checks.</p>
+<p>A naive browser loop makes that care expensive. Each move between the invoice list, payment activity and reminder history can resend a mostly unchanged table. A page that has gone quiet can still show the interim balance under a "Refreshing balances" bar. And once the checks pass, each known draft field can still cost its own model decision.</p>
+<p>Pilotfish, an open-source browser MCP, rethinks what passes between the browser and the model: carry forward the context already delivered, send the facts that changed, wait for evidence that the page is ready, and batch only the next steps that are already known. The judgment about the invoice stays with the model and the reviewer. The sections below follow this job through each mechanism, including where it stops saving.</p>
+<nav aria-labelledby="toc-title" class="toc">
+<h2 class="toc-h" id="toc-title">Contents</h2>
+<ol class="toc-list">
+<li><a href="#print-the-page"><span class="toc-n">1</span><span class="toc-t">Print the page the way a model reads it<small>Compact serialization and one-line table rows</small></span></a></li>
+<li><a href="#send-what-changed"><span class="toc-n">2</span><span class="toc-t">Send only what changed<small>The delivered base, change lists and full-screen fallbacks</small></span></a></li>
+<li><a href="#wait-for-evidence"><span class="toc-n">3</span><span class="toc-t">Wait for evidence, not silence<small>Scoped settling and the page's own loading signals</small></span></a></li>
+<li><a href="#read-the-answer"><span class="toc-n">4</span><span class="toc-t">Read the answer, not the page<small>Targeted reads and smaller action replies</small></span></a></li>
+<li><a href="#decide-once"><span class="toc-n">5</span><span class="toc-t">Decide once, check every step<small>Checked batching, and where a batch stops</small></span></a></li>
+<li><a href="#published-runs"><span class="toc-n">6</span><span class="toc-t">What the published runs show<small>WebVoyager means beside their limits</small></span></a></li>
+<li><a href="#tradeoff"><span class="toc-n">7</span><span class="toc-t">The tradeoff<small>What a compact default can miss</small></span></a></li>
+<li><a href="#try"><span class="toc-n">8</span><span class="toc-t">Try it<small>Local MCP setup for Claude Code and other clients</small></span></a></li>
+<li><a href="#refs"><span class="toc-n">9</span><span class="toc-t">References<small>Pinned source lines and benchmark data</small></span></a></li>
+</ol>
+</nav>
+<h2 id="print-the-page">Print the page the way a model reads it</h2>
+<p>Before deciding what to resend, decide what a page is. The portal's version is markup built for rendering. The model needs to know what each control and value is, what it is called, what it holds, and how to point at it.</p>
+<figure class="fig">
+<div class="sx">
+<div><span class="sx-h">Markup the browser renders</span><pre>&lt;tr class="row_3kq7 is-overdue" data-id="9f31"&gt;
+  &lt;td class="cell_a1"&gt;<span class="kp">Acme Fasteners</span>&lt;/td&gt;
+  &lt;td&gt;<span class="kp">&lt;a</span> class="lnk_7" <span class="kp">href="/invoices/INV-1042"</span>&gt;<span class="kp">INV-1042</span>&lt;/a&gt;&lt;/td&gt;
+  &lt;td class="cell_dt"&gt;<span class="kp">Oct 2</span>&lt;/td&gt;
+  &lt;td&gt;&lt;span class="badge_x2 red"&gt;<span class="kp">Overdue</span>&lt;/span&gt;&lt;/td&gt;
+  &lt;td class="num"&gt;<span class="kp">$8,400.00</span>&lt;/td&gt;
+&lt;/tr&gt;</pre></div>
+<div aria-hidden="true" class="sx-ar"><svg viewbox="0 0 28 14"><path d="M2 7H24M19 2.5L25 7L19 11.5"></path></svg></div>
+<div><span class="sx-h">Line the model reads</span><pre class="out">Acme Fasteners | <span class="rf">[e5]</span>INV-1042 | Oct 2 | Overdue | $8,400.00</pre></div>
+</div>
+<figcaption>Kept: each cell's text in column order, and the link, now reachable as <code>e5</code>. Dropped: classes, the data attribute and the wrapper span. One row, one line.</figcaption>
+</figure>
+<p>Pilotfish's serializer prints one line per meaningful element in an HTML-like grammar: tag or role, name, value and state, plus a short ref such as <code>e5</code> that the model uses to act and that stays the same from one snapshot of the page to the next.</p>
+<p>A plain table row prints on one line with its cells in column order between bars, so an amount stays with its invoice and its column. Styling classes, generated ids, attributes that only point at other elements and empty tracking frames are left out. The compact options are written to keep everything a reader acts on or quotes.⁠<a aria-label="Reference 1" class="cite" href="#ref-1">[1]</a></p>
+<p>Two more choices keep each observation small:</p>
+<ul class="tight rules">
+<li><b>The visible screen first.</b> A reply to an action covers the visible screen rather than three screens of results, and ends with a count of what sits above and below it.</li>
+<li><b>A named way to read more.</b> When a printout is cut at the character limit, its last line names the ways to read the rest: <code>browser_scroll</code>, <code>browser_get_text</code>, or <code>browser_snapshot</code> with <code>whole_page</code>.⁠<a aria-label="Reference 2" class="cite" href="#ref-2">[2]</a></li>
+</ul>
+<p>Offscreen content is not declared irrelevant. It is just not prepaid.</p>
+<h2 id="send-what-changed">Send only what changed</h2>
+<p>Take the agent's first move: it types "Acme" into the Customer filter. The field takes the value, two matching customers appear, a "Recent" link steps aside, and the invoice table does not change. With the screen in compact form, the reply can be a list of changes. The real question is what the changes are measured against.</p>
+<p>Pilotfish measures them against the <strong>delivered base</strong>: the last whole screen the caller actually received. Not the server's latest capture and not a cached copy, but the page that reached the model.</p>
+<p>Because the model has that page in context, a change list against it is something the model can apply: lines not listed are as shown there, and their refs still work.⁠<a aria-label="Reference 3" class="cite" href="#ref-3">[3]</a></p>
+<p>Step through the first part of the task:</p>
+<figure aria-labelledby="rpTitle" class="viz" id="v-reply">
+<div class="viz-head">
+<span class="viz-tag">Example</span>
+<h3 class="viz-title" id="rpTitle">One receivables page, four replies</h3>
+</div>
+<div aria-label="Choose a step" class="track" role="group">
+<button aria-pressed="true" class="tk is-base" data-s="0" type="button"><span class="tk-n">1</span><span class="tk-l">Open receivables</span><span class="tk-k k-full">Full screen</span><span class="tk-base">Base</span></button>
+<button aria-pressed="false" class="tk" data-s="1" type="button"><span class="tk-n">2</span><span class="tk-l">Type "Acme"</span><span class="tk-k k-delta">Changes only</span><span class="tk-base">Base</span></button>
+<button aria-pressed="false" class="tk" data-s="2" type="button"><span class="tk-n">3</span><span class="tk-l">Wait</span><span class="tk-k k-none">No page</span><span class="tk-base">Base</span></button>
+<button aria-pressed="false" class="tk" data-s="3" type="button"><span class="tk-n">4</span><span class="tk-l">Pick the customer</span><span class="tk-k k-full">Full screen</span><span class="tk-base">Base</span></button>
+</div>
+<div class="rp" id="rp"><div class="colh colh-L">Page</div><div class="colh colh-C"></div><div class="colh colh-R">Reply to the model</div><div class="L head"><div class="mk-url">finance.example/receivables</div></div><div class="C"></div><div class="R head"><span class="badge b-full">Full screen</span><span class="rh-text">Whole visible screen</span></div><div class="L hl-f" style="--d:0"><div class="mk mk-nav"><span class="mk-logo">Finance<i class="ref">e1</i></span><span class="mk-a">Sign out<i class="ref">e2</i></span></div></div><div class="C" style="--d:0"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:0"><span class="ln ln-f">[e1]&lt;a href="/"&gt;Finance</span><span class="ln ln-f">[e2]&lt;a href="/logout"&gt;Sign out</span></div><div class="L hl-f" style="--d:1"><div class="mk mk-h1">Receivables</div></div><div class="C" style="--d:1"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:1"><span class="ln ln-f">&lt;h1&gt;Receivables</span></div><div class="L hl-f" style="--d:2"><div class="mk mk-in"><span class="mk-ph">Customer</span><i class="ref">e3</i></div></div><div class="C" style="--d:2"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:2"><span class="ln ln-f">[e3]&lt;input placeholder="Customer" value=""&gt;</span></div><div class="L hl-f" style="--d:3"><div class="mk mk-recent">Recent: Bluefin Print Co.<i class="ref">e4</i></div></div><div class="C" style="--d:3"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:3"><span class="ln ln-f">[e4]&lt;a href="/customers/bluefin-print"&gt;Recent: Bluefin Print Co.</span></div><div class="L hl-f" style="--d:4"><div class="mk mk-tr mk-th"><span>Customer, invoice</span><span>Status</span><span class="c3">Outstanding</span></div></div><div class="C" style="--d:4"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:4"><span class="ln ln-f">&lt;table&gt;</span><span class="ln ln-f">  &lt;th&gt;Customer | Invoice | Due | Status | Outstanding</span></div><div class="L hl-f" style="--d:5"><div class="mk mk-tr"><span class="c1"><b>Acme Fasteners</b><span class="inv">INV-1042<i class="ref">e5</i><i class="due">due Oct 2</i></span></span><span class="c2 od">Overdue</span><span class="c3">$8,400.00</span></div></div><div class="C" style="--d:5"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:5"><span class="ln ln-f">  Acme Fasteners | [e5]INV-1042 | Oct 2 | Overdue | $8,400.00</span></div><div class="L hl-f" style="--d:6"><div class="mk mk-tr"><span class="c1"><b>Bluefin Print Co.</b><span class="inv">INV-1047<i class="ref">e6</i><i class="due">due Oct 9</i></span></span><span class="c2 od">Overdue</span><span class="c3">$1,260.00</span></div></div><div class="C" style="--d:6"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:6"><span class="ln ln-f">  Bluefin Print Co. | [e6]INV-1047 | Oct 9 | Overdue | $1,260.00</span></div><div class="L hl-f" style="--d:7"><div class="mk mk-tr"><span class="c1"><b>Cobalt Desk Supply</b><span class="inv">INV-1051<i class="ref">e7</i><i class="due">due Oct 30</i></span></span><span class="c2 od">Overdue</span><span class="c3">$3,975.50</span></div></div><div class="C" style="--d:7"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:7"><span class="ln ln-f">  Cobalt Desk Supply | [e7]INV-1051 | Oct 30 | Overdue | $3,975.50</span></div><div class="L hl-f" style="--d:8"><div class="mk mk-tr"><span class="c1"><b>Dunmore Labs</b><span class="inv">INV-1055<i class="ref">e8</i><i class="due">due Nov 21</i></span></span><span class="c2">Due soon</span><span class="c3">$640.00</span></div></div><div class="C" style="--d:8"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:8"><span class="ln ln-f">  Dunmore Labs | [e8]INV-1055 | Nov 21 | Due soon | $640.00</span></div><div class="L hl-f" style="--d:9"><div class="mk mk-tr"><span class="c1"><b>Acme Fasteners</b><span class="inv">INV-1058<i class="ref">e9</i><i class="due">due Nov 28</i></span></span><span class="c2">Open</span><span class="c3">$2,310.00</span></div></div><div class="C" style="--d:9"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R" style="--d:9"><span class="ln ln-f">  Acme Fasteners | [e9]INV-1058 | Nov 28 | Open | $2,310.00</span></div><div class="L hl-f last" style="--d:10"><div class="mk mk-more">More invoices below</div></div><div class="C" style="--d:10"><svg aria-hidden="true" class="cn cn-f" viewbox="0 0 38 14"><path d="M2 7H34"></path><path d="M29 2.5L35 7L29 11.5"></path></svg></div><div class="R last" style="--d:10"><span class="ln ln-f">(44 interactive elements below the viewport; scroll down to reveal)</span></div></div>
+<p aria-live="polite" class="viz-cap" id="rpCap">Reply 1 carries the whole visible screen, invoice table included. Once it is delivered, it is the base.</p>
+<ul class="legend">
+<li><i class="sw sw-chg"></i>Changed</li>
+<li><i class="sw sw-new"></i>New</li>
+<li><i class="sw sw-ctx"></i>Unchanged context, marked ~</li>
+<li><i class="sw sw-gone"></i>Removed</li>
+<li><i class="sw sw-none"></i>Not resent</li>
+</ul>
+<p class="fig-src">Example page. Line formats follow the serializer, change-list and evidence code.⁠<a aria-label="Reference 1" class="cite" href="#ref-1">[1]</a>⁠<a aria-label="Reference 4" class="cite" href="#ref-4">[4]</a>⁠<a aria-label="Reference 5" class="cite" href="#ref-5">[5]</a></p>
+</figure>
+<h3 class="sub">What makes the list safe to apply</h3>
+<ul class="tight rules">
+<li><b>Page order.</b> A re-sorted invoice table, or two rows that swapped amounts, reads as a change in its new place, never as the same page.</li>
+<li><b>Context.</b> Each run of changes follows the unchanged line before it, marked <code>~ </code>, so the model knows where the run sits.</li>
+<li><b>Removals.</b> Interactive elements that left the page are named in a closing <code>GONE</code> line, so the model is not left holding a ref to something that no longer exists.⁠<a aria-label="Reference 4" class="cite" href="#ref-4">[4]</a></li>
+</ul>
+<h3 class="sub">When a full screen is the better reply</h3>
+<p>A change list is only worth sending when it is shorter and clearer than the screen. Pilotfish sends the whole screen, and makes it the new base, when:⁠<a aria-label="Reference 3" class="cite" href="#ref-3">[3]</a></p>
+<ul class="tight">
+<li>the document or address changed, since the old lines describe a page that is gone;</li>
+<li>the base is more than eight browser results old;</li>
+<li>the change list would be longer than half the screen;</li>
+<li>a page was cut at the character limit, or contains text that looks like the list's own markers, such as a line reading <code>~ 2 hr</code> that could pass for context and put later lines under the wrong rows.⁠<a aria-label="Reference 4" class="cite" href="#ref-4">[4]</a></li>
+</ul>
+<p>None of these is the optimization failing. They are where it stops being one.</p>
+<h3 class="sub">Delivered means delivered</h3>
+<p>Pilotfish also has an output guard: a reply that would show a configured secret value is withheld whole rather than partly masked. The guard covers values it can recognize, not every possible secret.⁠<a aria-label="Reference 10" class="cite" href="#ref-10">[10]</a></p>
+<p>That means the server can capture a screen that the model never receives.</p>
+<div class="q" data-q="0">
+<p class="q-k">Predict</p>
+<p class="q-p">The server captured the invoice page, but the guard withheld that reply because it would have shown a configured secret value. The next click changes one field. What should the next reply be?</p>
+<div aria-label="Answers" class="q-opts" role="group">
+<button aria-pressed="false" data-o="0" type="button">A change list against the withheld page</button>
+<button aria-pressed="false" data-o="1" type="button">A change list against the last page the model did receive</button>
+<button aria-pressed="false" data-o="2" type="button">The whole screen</button>
+</div>
+<div aria-live="polite" class="q-fb"></div>
+</div>
+<p>A base commits only when its reply is delivered. A withheld reply leaves no base, and until a whole screen reaches the model again, every action prints its page in full.⁠<a aria-label="Reference 3" class="cite" href="#ref-3">[3]</a></p>
+<h2 id="wait-for-evidence">Wait for evidence, not silence</h2>
+<p>The agent picks Acme Fasteners, the filtered list loads, and it opens INV-1042. The invoice page draws quickly, but its balance panel refreshes on its own to apply the new payment. Before replying, pilotfish has to decide when the page is ready to describe.</p>
+<p>A fixed sleep is wrong both ways: too short and the model reads a half-drawn page, too long and every action pays for the slowest one.</p>
+<p>Waiting for the whole page to go quiet fails differently. Analytics, ads and polling keep many pages busy indefinitely, so a page-wide quiet window tends to run to its cap.</p>
+<h3 class="sub">What the settle step watches</h3>
+<p>It watches only what the action started. For a short window after the action, longer after typing into a debounced input, it looks for a request, a navigation or a DOM change. Then:</p>
+<ul class="tight rules">
+<li><b>Nothing started:</b> the reply goes now.</li>
+<li><b>Only the DOM changed:</b> it waits for the changes to stop.</li>
+<li><b>The action sent requests:</b> it waits for those, including the server's answer to any write, then for a short render window.</li>
+</ul>
+<p>The result records which conditions were met.⁠<a aria-label="Reference 6" class="cite" href="#ref-6">[6]</a></p>
+<h3 class="sub">Quiet is not the same as ready</h3>
+<p>The settle step answers "has the action finished?" It does not always answer "is the page ready?"</p>
+<div class="q" data-q="1">
+<p class="q-k">Predict</p>
+<p class="q-p">After the click on INV-1042, the request has been answered and the DOM has stopped changing. The balance panel shows $8,400.00 outstanding under a bar that reads "Refreshing balances". Is that amount ready to report?</p>
+<div aria-label="Answers" class="q-opts" role="group">
+<button aria-pressed="false" data-o="0" type="button">Yes. The network and the DOM are both quiet.</button>
+<button aria-pressed="false" data-o="1" type="button">No. The page itself still says it is loading.</button>
+<button aria-pressed="false" data-o="2" type="button">Only a screenshot can tell.</button>
+</div>
+<div aria-live="polite" class="q-fb"></div>
+</div>
+<figure aria-labelledby="sTitle" class="viz" id="v-settle">
+<div class="viz-head">
+<span class="viz-tag">Example</span>
+<h3 class="viz-title" id="sTitle" tabindex="-1">The evidence behind a reply</h3>
+</div>
+<div aria-label="Scenario" class="seg" role="group">
+<button aria-pressed="false" data-c="0" type="button">Open a menu</button>
+<button aria-pressed="true" data-c="1" type="button">Open the invoice</button>
+<button aria-pressed="false" data-c="2" type="button">Balance still refreshing</button>
+<button aria-pressed="false" data-c="3" type="button">Save the draft</button>
+</div>
+<p class="act-line" id="sActLine">Action <b id="sActName">click INV-1042</b></p>
+<div class="mx" id="sMx"><div class="mxr h"><span></span><span class="on">Right after the action</span><span></span><span class="on">After the wait</span></div><div class="mxr key-ok"><span class="mx-l">Request it started</span><span class="pill p-seen">in flight</span><svg aria-hidden="true" class="mxa on" viewbox="0 0 22 12"><path d="M2 6H18M14 2.5L19 6L14 9.5"></path></svg><span class="pill p-done">answered</span></div><div class="mxr key-ok"><span class="mx-l">DOM changes</span><span class="pill p-seen">changing</span><svg aria-hidden="true" class="mxa on" viewbox="0 0 22 12"><path d="M2 6H18M14 2.5L19 6L14 9.5"></path></svg><span class="pill p-done">quiet</span></div><div class="mxr key-ok"><span class="mx-l">Loading indicator</span><span class="pill p-seen">"Loading invoice"</span><svg aria-hidden="true" class="mxa on" viewbox="0 0 22 12"><path d="M2 6H18M14 2.5L19 6L14 9.5"></path></svg><span class="pill p-done">cleared</span></div><div class="mxr"><span class="mx-l">Other traffic</span><span class="pill p-ign">ongoing</span><svg aria-hidden="true" class="mxa on" viewbox="0 0 22 12"><path d="M2 6H18M14 2.5L19 6L14 9.5"></path></svg><span class="pill p-ign">not waited for</span></div></div>
+<div aria-live="polite" class="verdict ok" id="sVerdict"><span class="k">Reply</span><b id="sVB">Ready</b><span id="sVS">request answered, page drawn, loading bar gone</span></div>
+<div class="ctl">
+<button class="btn primary" id="sPlay" type="button">Play</button>
+<button class="btn" id="sStepBtn" type="button">Step</button>
+<button class="btn" id="sReset" type="button">Reset</button>
+<span class="status" id="sStatus">Showing the outcome</span>
+<span class="tiny">Phases, not a time scale. Highlighted rows decide the reply.</span>
+</div>
+</figure>
+<p>After an action, pilotfish also looks for the page's own loading signals: an indeterminate progress bar, <code>aria-busy</code>, or a progress element labelled loading, fetching, searching or updating. It waits up to six seconds for them to clear.</p>
+<p>If one is still there, the reply says the page is still loading instead of presenting interim content as final.⁠<a aria-label="Reference 7" class="cite" href="#ref-7">[7]</a> A write that never got an answer is handled the same way: reported as unanswered, not assumed accepted.⁠<a aria-label="Reference 6" class="cite" href="#ref-6">[6]</a></p>
+<h2 id="read-the-answer">Read the answer, not the page</h2>
+<p>The balance has refreshed. The next decisions need a few facts from the invoice page: its ID, the current outstanding amount, whether it is disputed and when the last reminder went out. Printing every line item, payment and activity entry to read four values is the same repetition in a new place.</p>
+<p><code>browser_query</code> runs read-only JavaScript in a world of its own, with page writes blocked, and returns only the values asked for. For this invoice, that can be as small as:</p>
+<pre class="snip"><span class="snip-k">Example values</span>{ "invoice": "INV-1042", "outstanding": "$5,150.00", "disputed": false, "lastReminder": null }</pre>
+<p>The $5,150.00 is the balance after the partial payment, which the list had not caught up with. A comment in the source records the case that motivated the tool⁠<a aria-label="Reference 2" class="cite" href="#ref-2">[2]</a>:</p>
+<figure class="fig">
+<div class="rd">
+<div class="rd-row"><span>Results page text</span><div class="rd-bar"><i style="--w:1"></i>about 20,000 chars</div></div>
+<div class="rd-row"><span>Values the task needed</span><div class="rd-bar k"><i style="--w:.145"></i>about 2,900 chars</div></div>
+</div>
+<figcaption>One store's results page, as noted in the pilotfish MCP session code.⁠<a aria-label="Reference 2" class="cite" href="#ref-2">[2]</a></figcaption>
+</figure>
+<h3 class="sub">Smaller replies to actions</h3>
+<p>Acting tools have a related switch. With <code>snapshot:false</code>, the printed page is left out of the reply while the checks, the action evidence and the write receipts still run.</p>
+<p>With escalation on, an unmet or ambiguous expectation, or an event such as a dialog, a new tab, an invalid field or a page still loading, brings the page back.⁠<a aria-label="Reference 8" class="cite" href="#ref-8">[8]</a></p>
+<p>The catch: a small reply is not free if the model then needs another read to finish the thought. The measure is the whole task, recovery reads included.</p>
+<h2 id="decide-once">Decide once, check every step</h2>
+<p>Last stretch. By now the balance is confirmed at $5,150.00, the invoice is not disputed and no recent reminder has gone out, so a draft is appropriate.</p>
+<p>Had the agent found a dispute or a recent reminder, this workflow would stop for review instead of drafting. That rule belongs to the workflow, not to the MCP.</p>
+<p>With those checks settled, the recipient's email, the subject, the message and an internal note for the collections team are all known before the first keystroke. Seeing the email typed tells the model nothing new about the subject.</p>
+<p>Pressing Send is different. It is a consequential action that waits on a person's review, and this workflow stops before it.</p>
+<h3 class="sub">Known steps and uncertain steps</h3>
+<ul class="tight rules">
+<li><b>Known:</b> no earlier result could change the step. Known steps can share one decision.</li>
+<li><b>Uncertain:</b> the step depends on what the page does, or on a decision that needs review. Uncertain steps need a fresh look.</li>
+</ul>
+<p><code>browser_actions</code> takes up to ten known steps in one call and runs them in order. Each step gets the same checks it would get as its own tool call, and the reply has a line per step with the facts that must not be lost, such as what a field read back, followed by the last page as changes against the base.⁠<a aria-label="Reference 9" class="cite" href="#ref-9">[9]</a></p>
+<h3 class="sub">What a batch removes, and what it keeps</h3>
+<p>Three counts are worth keeping apart:</p>
+<ul class="tight rules">
+<li><b>Model call:</b> the model reading and deciding once.</li>
+<li><b>Tool call:</b> one request to the browser tool.</li>
+<li><b>Browser step:</b> one action on the page.</li>
+</ul>
+<p>Batching keeps every browser step and its checks; what it removes is the model calls and tool calls between them. The steps still execute and settle one by one, and they are not merged into one request to the site.</p>
+<h3 class="sub">When a batch stops</h3>
+<div class="q" data-q="2">
+<p class="q-k">Predict</p>
+<p class="q-p">The portal checks the recipient's address as it is typed, and the check is still spinning after the email step. Subject, message and note are known values. Should the batch type them?</p>
+<div aria-label="Answers" class="q-opts" role="group">
+<button aria-pressed="false" data-o="0" type="button">Yes. Their values do not depend on the email.</button>
+<button aria-pressed="false" data-o="1" type="button">No. Stop and hand the page back to the model.</button>
+<button aria-pressed="false" data-o="2" type="button">Retry the email step first.</button>
+</div>
+<div aria-live="polite" class="q-fb"></div>
+</div>
+<figure aria-labelledby="bTitle" class="viz" id="v-batch">
+<div class="viz-head">
+<span class="viz-tag">Example</span>
+<h3 class="viz-title" id="bTitle" tabindex="-1">Four known fields, two ways</h3>
+</div>
+<div aria-label="Scenario" class="seg" role="group">
+<button aria-pressed="true" data-b="0" type="button">Fields fill normally</button>
+<button aria-pressed="false" data-b="1" type="button">Email check stays loading</button>
+</div>
+<div class="lanes">
+<section aria-labelledby="laneAh" class="lane">
+<h4 id="laneAh">One call per step</h4>
+<p class="sub">The model reads a result before each step.</p>
+<div class="lg" id="laneA"><div class="hd m">Model</div><div class="hd b">Browser</div><div class="mr first" style="grid-row:2"><span class="call">Call 1</span></div><div class="cc" style="grid-row:2"><span class="arw go"></span><span class="arw back"></span></div><div class="bs ok first" style="grid-row:2"><b>type Email</b><span class="st">checked</span></div><div class="mr" style="grid-row:3"><span class="call">Call 2</span></div><div class="cc" style="grid-row:3"><span class="arw go"></span><span class="arw back"></span></div><div class="bs ok" style="grid-row:3"><b>type Subject</b><span class="st">checked</span></div><div class="mr" style="grid-row:4"><span class="call">Call 3</span></div><div class="cc" style="grid-row:4"><span class="arw go"></span><span class="arw back"></span></div><div class="bs ok" style="grid-row:4"><b>type Message</b><span class="st">checked</span></div><div class="mr endrow" style="grid-row:5"><span class="call">Call 4</span></div><div class="cc" style="grid-row:5"><span class="arw go"></span><span class="arw back"></span></div><div class="bs ok endrow" style="grid-row:5"><b>type Note</b><span class="st">checked</span></div></div>
+<div class="stats" id="statsA"><div class="m"><b>4</b><span>model calls</span></div><div><b>4</b><span>browser steps</span></div><div><b>4</b><span>checks</span></div></div>
+</section>
+<section aria-labelledby="laneBh" class="lane">
+<h4 id="laneBh">One batch</h4>
+<p class="sub">One call, then checked steps in order.</p>
+<div class="lg" id="laneB"><div class="hd m">Model</div><div class="hd b">Browser</div><div class="mr first" style="grid-row:2"><span class="call">Call 1</span></div><div class="cc" style="grid-row:2"><span class="arw go"></span><span class="arw back none"></span></div><div class="bs ok first chain" style="grid-row:2"><b>type Email</b><span class="st">checked</span></div><div class="mr" style="grid-row:3"></div><div class="cc" style="grid-row:3"><span class="arw go none"></span><span class="arw back none"></span></div><div class="bs ok chain" style="grid-row:3"><b>type Subject</b><span class="st">checked</span></div><div class="mr" style="grid-row:4"></div><div class="cc" style="grid-row:4"><span class="arw go none"></span><span class="arw back none"></span></div><div class="bs ok chain" style="grid-row:4"><b>type Message</b><span class="st">checked</span></div><div class="mr endrow" style="grid-row:5"></div><div class="cc" style="grid-row:5"><span class="arw go none"></span><span class="arw back"></span></div><div class="bs ok endrow" style="grid-row:5"><b>type Note</b><span class="st">checked</span></div></div>
+<div class="stats" id="statsB"><div class="m"><b>1</b><span>model call</span></div><div><b>4</b><span>browser steps</span></div><div><b>4</b><span>checks</span></div></div>
+</section>
+</div>
+<ul class="legend">
+<li><svg aria-hidden="true" class="lk" viewbox="0 0 26 12"><path class="a1" d="M2 6H22M18 2.5L23 6L18 9.5"></path></svg>Tool call from the model</li>
+<li><svg aria-hidden="true" class="lk" viewbox="0 0 26 12"><path class="a2" d="M24 6H4M8 2.5L3 6L8 9.5"></path></svg>Result back to the model</li>
+<li><svg aria-hidden="true" class="lk" viewbox="0 0 26 12"><path class="a2" d="M13 0V11"></path></svg>Next step with no model call</li>
+</ul>
+<p class="stopline" hidden="" id="bStop">The batch reply says: <code>Stopped after step 1: the page was still loading (later steps would act on a page still changing); steps 2-4 were not run.</code></p>
+<div class="ctl">
+<button class="btn primary" id="bPlay" type="button">Play</button>
+<button class="btn" id="bStepBtn" type="button">Step</button>
+<button class="btn" id="bReset" type="button">Reset</button>
+<span aria-live="polite" class="status" id="bStatus">Showing the full sequence</span>
+<span class="tiny">Order of events, not timing.</span>
+</div>
+</figure>
+<p>A batch ends:⁠<a aria-label="Reference 9" class="cite" href="#ref-9">[9]</a></p>
+<ul class="tight">
+<li>at the first step that fails;</li>
+<li>after a step that moves the page to another address, since later refs would belong to the old page;</li>
+<li>after a step that raises a dialog, opens a tab, has a server write refused or unanswered, leaves the page still loading, or leaves a check or sign-in on the page.</li>
+</ul>
+<p>One thing does not end it on its own: a field the page marks invalid. That is reported on the step's line, and the model sees it in the reply.</p>
+<p>In this workflow a finished batch leaves four filled fields and nothing else. Send is not part of it, and it is not taken here at all: the draft waits for a person.</p>
+<h2 id="published-runs">What the published runs show</h2>
+<p>The mechanisms say where savings should come from. Whether they show up across real tasks is a separate question, and the project keeps a measurement of it.</p>
+<p>The Pilotfish repository includes a rerun of LangChain's WebVoyager comparison setup, with its tasks, prompts and judge criteria, putting the pilotfish open MCP beside Playwright MCP, the baseline that comparison used. Both arms ran on the same machine against the same live pages at the same time.⁠<a aria-label="Reference 11" class="cite" href="#ref-11">[11]</a></p>
+<p>The tasks are WebVoyager's public web tasks; the invoice workflow above is only an illustration.</p>
+<figure aria-labelledby="bmTitle" class="viz text" id="v-bench">
+<div class="viz-head"><h3 class="viz-title" id="bmTitle">Paired WebVoyager rerun, means per task</h3></div>
+<div class="bm-legend"><span><i class="sw sw-pf"></i>pilotfish</span><span><i class="sw sw-pw"></i>Playwright MCP</span><span class="note">Lower is better</span></div>
+<div class="bm">
+<div class="bm-row"><div class="bm-m"><b>Input tokens</b><span>45% fewer</span></div><div class="bm-bars"><div class="bar pf"><i style="--w:.544"></i>115.7K</div><div class="bar pw"><i style="--w:1"></i>212.6K</div></div></div>
+<div class="bm-row"><div class="bm-m"><b>Tool calls</b><span>36% fewer</span></div><div class="bm-bars"><div class="bar pf"><i style="--w:.638"></i>8.3</div><div class="bar pw"><i style="--w:1"></i>13.0</div></div></div>
+<div class="bm-row"><div class="bm-m"><b>Elapsed time</b><span>11% less</span></div><div class="bm-bars"><div class="bar pf"><i style="--w:.893"></i>114.9 s</div><div class="bar pw"><i style="--w:1"></i>128.6 s</div></div></div>
+<div class="bm-row"><div class="bm-m"><b>Model cost</b><span>43% less</span></div><div class="bm-bars"><div class="bar pf"><i style="--w:.573"></i>$0.00232</div><div class="bar pw"><i style="--w:1"></i>$0.00405</div></div></div>
+</div>
+<p class="bm-method">Arithmetic means per task over the tasks that ran, excluding errors before the first model turn. Model cost includes cached-token pricing. The same model drove and judged both arms, and timings were recorded with five tasks running concurrently.⁠<a aria-label="Reference 11" class="cite" href="#ref-11">[11]</a>⁠<a aria-label="Reference 12" class="cite" href="#ref-12">[12]</a></p>
+</figure>
+<p>Read the chart with its limits:</p>
+<ul class="tight">
+<li>Correctness was slightly higher for pilotfish in this run, which does not establish that the two are equal or that either is better.</li>
+<li>These are the project's own published runs, not third-party verified scores.</li>
+<li>They compare whole systems rather than isolating any mechanism above.</li>
+</ul>
+<p>The runner, the task file and every result row are in <a href="https://github.com/gAI-ventures/pilotfish-ai/tree/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/benchmarks/webvoyager-100" rel="noopener noreferrer" target="_blank">benchmarks/webvoyager-100</a>.⁠<a aria-label="Reference 11" class="cite" href="#ref-11">[11]</a>⁠<a aria-label="Reference 12" class="cite" href="#ref-12">[12]</a></p>
+<h2 id="tradeoff">The tradeoff</h2>
+<p>Pilotfish bets that a compact default, plus deliberate ways to see more, beats one complete representation of every page. That is a real tradeoff.</p>
+<p>A compact observation can leave out the control that mattered, and some tools let the model choose its own observation strategy, which is a legitimate design.</p>
+<p>My answer is that each shortcut here carries its way back: the whole screen when the base no longer fits, a stop when the page is still changing, a loading note instead of an interim answer, a full snapshot one call away. The design explains where the savings come from. Whether accuracy holds on your workload is something to measure.</p>
+<h2 id="try">Try it</h2>
+<div class="try">
+<div class="try-head"><svg aria-label="pilotfish logo" role="img" viewbox="0 0 32 32"><defs><mask id="m"><rect fill="#fff" height="32" width="32"></rect><g fill="#000"><rect height="12" width="1.7" x="12.2" y="10"></rect><rect height="12" width="1.7" x="16.2" y="10"></rect><rect height="12" width="1.7" x="20.2" y="10"></rect></g></mask></defs><rect fill="#0a0a0a" height="32" rx="8" width="32"></rect><g fill="#fff"><path d="M9.5 14.6 3 10.5C4.2 12.6 5.5 14.4 5.5 16 5.5 17.6 4.2 19.4 3 21.5L9.5 17.4Z"></path><path d="M7.5 16C7.5 12.9 12.1 11 17.7 11 22.3 11 25.9 12.9 27 16 25.9 19.1 22.3 21 17.7 21 12.1 21 7.5 19.1 7.5 16Z" mask="url(#m)"></path></g></svg><b>Pilotfish open MCP</b><span>runs locally</span></div>
+<p>The open MCP runs on your own machine and drives a local Chrome or Chromium. It needs Node.js 22 or later, and no Pilotfish account or API key. In Claude Code:</p>
+<div class="cmd"><pre id="cmdText">claude mcp add pilotfish -- npx -y @gaiventures/pilotfish-mcp</pre><button class="btn" id="copyCmd" type="button">Copy</button></div>
+<p>Setup for other MCP clients is in the open MCP docs. This is the local MCP, not the managed service, and the TypeScript SDK is a separate package.</p>
+<ul class="try-links">
+<li><a href="https://github.com/gAI-ventures/pilotfish-ai" rel="noopener noreferrer" target="_blank"><b>Repository</b><span>github.com/gAI-ventures/pilotfish-ai</span></a></li>
+<li><a href="https://pilotfish.gai.ventures/docs/open" rel="noopener noreferrer" target="_blank"><b>Open MCP docs</b><span>Setup for other clients</span></a></li>
+<li><a href="https://www.npmjs.com/package/@gaiventures/pilotfish-mcp" rel="noopener noreferrer" target="_blank"><b>npm: the open MCP</b><span>@gaiventures/pilotfish-mcp</span></a></li>
+<li><a href="https://www.npmjs.com/package/@gaiventures/pilotfish" rel="noopener noreferrer" target="_blank"><b>npm: TypeScript SDK</b><span>@gaiventures/pilotfish, separate from the MCP</span></a></li>
+</ul>
+<p class="try-note">Point it at a page your agent has already read and look at what comes back. If something breaks, an issue on the repository helps, and so does a star if you find it useful.</p>
+</div>
+<section aria-labelledby="refs" class="refs">
+<h2 id="refs">References</h2>
+<p class="refs-note">The implementation references point at one public commit of gAI-ventures/pilotfish-ai, <a href="https://github.com/gAI-ventures/pilotfish-ai/tree/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/" rel="noopener noreferrer" target="_blank">b990f0f</a>, so line numbers stay put. They show what the code does, not how well it performs. The measured references hold the benchmark method and rows behind the chart.</p>
+<h3 class="refs-h">Implementation, at commit b990f0f</h3>
+<ol class="reflist">
+<li id="ref-1"><span class="ref-n">[1]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/perception/src/serialize.ts#L1-L78" rel="noopener noreferrer" target="_blank">Serializer grammar and compact options</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/perception/src/serialize.ts#L1-L78" rel="noopener noreferrer" target="_blank">packages/<wbr/>perception/<wbr/>src/<wbr/>serialize.ts</a>, lines 1-78; <a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/perception/src/serialize.ts#L301-L376" rel="noopener noreferrer" target="_blank">packages/<wbr/>perception/<wbr/>src/<wbr/>serialize.ts</a>, lines 301-376</span><span class="what">The one-line-per-element grammar, refs, and the compact options that drop generated ids and pointer attributes, limit a printout to the screen, and skip empty tracking frames; and plain table rows printed on one line, cells in order between bars.</span></div></li>
+<li id="ref-2"><span class="ref-n">[2]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/session.ts#L185-L223" rel="noopener noreferrer" target="_blank">MCP session defaults</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/session.ts#L185-L223" rel="noopener noreferrer" target="_blank">packages/<wbr/>mcp/<wbr/>src/<wbr/>session.ts</a>, lines 185-223</span><span class="what">What the MCP switches on: compact screens, visible-screen replies with above and below counts, the read-more hint, the loading wait, browser_query with its 20,000 and 2,900 character note, and replies withheld whole when they would show a secret value.</span></div></li>
+<li id="ref-3"><span class="ref-n">[3]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L325-L438" rel="noopener noreferrer" target="_blank">Delivered base and change-list rules</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L325-L438" rel="noopener noreferrer" target="_blank">packages/<wbr/>mcp/<wbr/>src/<wbr/>server.ts</a>, lines 325-438</span><span class="what">pageText: a base commits only on delivery, a withheld reply leaves no base, and a whole screen replaces a change list for another document or address, a base more than eight results old, or a change over half the screen.</span></div></li>
+<li id="ref-4"><span class="ref-n">[4]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/perception/src/observation.ts#L142-L263" rel="noopener noreferrer" target="_blank">Ordered change-list format</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/perception/src/observation.ts#L142-L263" rel="noopener noreferrer" target="_blank">packages/<wbr/>perception/<wbr/>src/<wbr/>observation.ts</a>, lines 142-263</span><span class="what">Page order, ~ context lines, replaced-line counts, the closing GONE line, and the whole screen when a page was cut or contains text that looks like the list's markers.</span></div></li>
+<li id="ref-5"><span class="ref-n">[5]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/perception/src/evidence.ts#L270-L271" rel="noopener noreferrer" target="_blank">Replies when nothing changed</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/perception/src/evidence.ts#L270-L271" rel="noopener noreferrer" target="_blank">packages/<wbr/>perception/<wbr/>src/<wbr/>evidence.ts</a>, lines 270-271; <a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/agent/src/agent.ts#L3862-L3875" rel="noopener noreferrer" target="_blank">packages/<wbr/>agent/<wbr/>src/<wbr/>agent.ts</a>, lines 3862-3875</span><span class="what">The one-line evidence for an action with no observable effect, and the rule that no page is printed then.</span></div></li>
+<li id="ref-6"><span class="ref-n">[6]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/browser/src/page.ts#L1154-L1255" rel="noopener noreferrer" target="_blank">Evidence-based settling</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/browser/src/page.ts#L1154-L1255" rel="noopener noreferrer" target="_blank">packages/<wbr/>browser/<wbr/>src/<wbr/>page.ts</a>, lines 1154-1255</span><span class="what">settleFast: the short watch window, the longer one for debounced inputs, waiting for caused requests and write answers, ignoring other traffic, and recording which conditions were met.</span></div></li>
+<li id="ref-7"><span class="ref-n">[7]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/agent/src/agent.ts#L265-L272" rel="noopener noreferrer" target="_blank">Waiting on loading indicators</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/agent/src/agent.ts#L265-L272" rel="noopener noreferrer" target="_blank">packages/<wbr/>agent/<wbr/>src/<wbr/>agent.ts</a>, lines 265-272</span><span class="what">The loading indicators checked, the six-second limit, why a quiet network and DOM are not enough, and the interim-price case that motivated it.</span></div></li>
+<li id="ref-8"><span class="ref-n">[8]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L57-L83" rel="noopener noreferrer" target="_blank">Reply-size options</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L57-L83" rel="noopener noreferrer" target="_blank">packages/<wbr/>mcp/<wbr/>src/<wbr/>server.ts</a>, lines 57-83; <a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/agent/src/agent.ts#L575-L580" rel="noopener noreferrer" target="_blank">packages/<wbr/>agent/<wbr/>src/<wbr/>agent.ts</a>, lines 575-580</span><span class="what">snapshot:false, the opt-in expectation, and the escalation conditions that bring the page back.</span></div></li>
+<li id="ref-9"><span class="ref-n">[9]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L181" rel="noopener noreferrer" target="_blank">Batched steps and stop rules</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L181" rel="noopener noreferrer" target="_blank">packages/<wbr/>mcp/<wbr/>src/<wbr/>server.ts</a>, line 181; <a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L456-L457" rel="noopener noreferrer" target="_blank">packages/<wbr/>mcp/<wbr/>src/<wbr/>server.ts</a>, lines 456-457; <a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L766-L845" rel="noopener noreferrer" target="_blank">packages/<wbr/>mcp/<wbr/>src/<wbr/>server.ts</a>, lines 766-845</span><span class="what">The ten-step limit, the step facts that end a batch, and browser_actions itself. An invalid field is reported on its step's line but is not a stop condition.</span></div></li>
+<li id="ref-10"><span class="ref-n">[10]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L593-L708" rel="noopener noreferrer" target="_blank">Output guard</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/mcp/src/server.ts#L593-L708" rel="noopener noreferrer" target="_blank">packages/<wbr/>mcp/<wbr/>src/<wbr/>server.ts</a>, lines 593-708; <a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/packages/agent/src/secrets.ts#L61-L97" rel="noopener noreferrer" target="_blank">packages/<wbr/>agent/<wbr/>src/<wbr/>secrets.ts</a>, lines 61-97</span><span class="what">How a reply that would show a secret value is withheld whole, and when screenshots are refused. It covers values the guard can recognize.</span></div></li>
+</ol>
+<h3 class="refs-h">Measured runs, at the same commit</h3>
+<ol class="reflist">
+<li id="ref-11"><span class="ref-n">[11]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/benchmarks/webvoyager-100/README.md#what-is-different" rel="noopener noreferrer" target="_blank">WebVoyager-100 rerun: method</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/benchmarks/webvoyager-100/README.md#what-is-different" rel="noopener noreferrer" target="_blank">benchmarks/<wbr/>webvoyager-100/<wbr/>README.md</a>, README</span><span class="what">What was copied from LangChain's setup, the model that drove and judged both arms, five tasks running at a time, list prices including the cached-token rate, and the exclusion of tasks that errored before the first model turn. Its own table reports medians; the means in this post come from [12].</span></div></li>
+<li id="ref-12"><span class="ref-n">[12]</span><div><a class="rt" href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/benchmarks/webvoyager-100/results/2026-11-11-luna.jsonl#L1" rel="noopener noreferrer" target="_blank">WebVoyager-100 rerun: result rows</a><span class="src"><a href="https://github.com/gAI-ventures/pilotfish-ai/blob/b990f0f08b6aa552600c8a29c12fa42d8c6bdbcd/benchmarks/webvoyager-100/results/2026-11-11-luna.jsonl#L1" rel="noopener noreferrer" target="_blank">benchmarks/<wbr/>webvoyager-100/<wbr/>results/<wbr/>2026-11-11-luna.jsonl</a>, results/2026-11-11-luna.jsonl</span><span class="what">One row per task and arm, with tokens, tool calls, seconds and cost. The chart's means are computed from these rows.</span></div></li>
+</ol>
+</section>
+</article>
+<footer aria-label="About the author" class="author">
+<div>
+<p class="au-name">Nitin Reddy</p>
+<p>Questions and corrections are welcome on <a href="https://github.com/NitinReddy-A" rel="noopener noreferrer me" target="_blank">GitHub</a>.</p>
+</div>
+</footer>
+</main>
+</div>
+<script>
+(function(){
+"use strict";
+var reduced = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function $(id){return document.getElementById(id);}
+function all(sel){return Array.prototype.slice.call(document.querySelectorAll(sel));}
+
+/* ---------- Visual 1: page and reply ---------- */
+function ref(r){return '<i class="ref">'+r+'</i>';}
+var MK = {
+  nav: function(a,b){return '<div class="mk mk-nav"><span class="mk-logo">Finance'+ref(a)+'</span><span class="mk-a">Sign out'+ref(b)+'</span></div>';},
+  h1: function(t){return '<div class="mk mk-h1">'+t+'</div>';},
+  filter: function(v,r){return '<div class="mk mk-in">'+(v?'<span class="mk-val">'+v+'</span><span class="mk-caret"></span>':'<span class="mk-ph">Customer</span>')+ref(r||"e3")+'</div>';},
+  filterSet: '<div class="mk mk-in"><span class="mk-val">Acme Fasteners</span>'+ref("e14")+'</div>',
+  recent: '<div class="mk mk-recent">Recent: Bluefin Print Co.'+ref("e4")+'</div>',
+  ghost: '<div class="mk mk-recent ghost">Recent: Bluefin Print Co.'+ref("e4")+'</div>',
+  sugg: '<div class="mk mk-sugg"><span>Acme Fasteners'+ref("e10")+'</span><span>Acme Fasteners (EU)'+ref("e11")+'</span></div>',
+  th: '<div class="mk mk-tr mk-th"><span>Customer, invoice</span><span>Status</span><span class="c3">Outstanding</span></div>',
+  row: function(c,inv,r,due,st,amt){return '<div class="mk mk-tr"><span class="c1"><b>'+c+'</b><span class="inv">'+inv+ref(r)+'<i class="due">due '+due+'</i></span></span><span class="c2'+(st==="Overdue"?' od':'')+'">'+st+'</span><span class="c3">'+amt+'</span></div>';},
+  more: '<div class="mk mk-more">More invoices below</div>'
+};
+var ROWS = [
+  ["Acme Fasteners","INV-1042","e5","Oct 2","Overdue","$8,400.00"],
+  ["Bluefin Print Co.","INV-1047","e6","Oct 9","Overdue","$1,260.00"],
+  ["Cobalt Desk Supply","INV-1051","e7","Oct 30","Overdue","$3,975.50"],
+  ["Dunmore Labs","INV-1055","e8","Nov 21","Due soon","$640.00"],
+  ["Acme Fasteners","INV-1058","e9","Nov 28","Open","$2,310.00"]
+];
+function rowLine(r){return '  '+r[0]+' | ['+r[2]+']'+r[1]+' | '+r[3]+' | '+r[4]+' | '+r[5];}
+function rowMock(r){return MK.row(r[0],r[1],r[2],r[3],r[4],r[5]);}
+var TH = ['<table>','  <th>Customer | Invoice | Due | Status | Outstanding'];
+function lines(kind, arr){return arr.map(function(t){return [kind,t];});}
+var NONE = [["none",""]];
+function tableRows(kind){return ROWS.map(function(r){return {L:rowMock(r), lines: kind==="none"?NONE:[[kind,rowLine(r)]]};});}
+var ACME = [["Acme Fasteners","INV-1042","e15","Oct 2","Overdue","$8,400.00"],["Acme Fasteners","INV-1058","e16","Nov 28","Open","$2,310.00"]];
+var STATES = [
+  { url:"finance.example/receivables", badge:["full","Full screen"], head:{text:"Whole visible screen"}, base:0,
+    cap:"Reply 1 carries the whole visible screen, invoice table included. Once it is delivered, it is the base.",
+    rows:[
+      {L:MK.nav("e1","e2"), lines:lines("f",['[e1]<a href="/">Finance','[e2]<a href="/logout">Sign out'])},
+      {L:MK.h1("Receivables"), lines:lines("f",["<h1>Receivables"])},
+      {L:MK.filter(""), lines:lines("f",['[e3]<input placeholder="Customer" value="">'])},
+      {L:MK.recent, lines:lines("f",['[e4]<a href="/customers/bluefin-print">Recent: Bluefin Print Co.'])},
+      {L:MK.th, lines:lines("f",TH)}
+    ].concat(tableRows("f")).concat([
+      {L:MK.more, lines:lines("f",["(44 interactive elements below the viewport; scroll down to reveal)"])}
+    ])},
+  { url:"finance.example/receivables", badge:["delta","Changes only"], head:{code:"CHANGES ONLY since the page snapshot 1 browser result back."}, base:0,
+    cap:"One changed field, two new suggestions and a removed link, placed after one unchanged context line. The invoice table is not resent; every unlisted line is as in the base.",
+    rows:[
+      {L:MK.nav("e1","e2"), lines:NONE},
+      {L:MK.h1("Receivables"), lines:[["ctx","~ <h1>Receivables"]]},
+      {L:MK.filter("Acme"), lines:[["chg",'[e3]<input placeholder="Customer" value="Acme" focused>']]},
+      {L:MK.sugg, lines:[["new","[e10]<button>Acme Fasteners"],["new","[e11]<button>Acme Fasteners (EU)"]]},
+      {L:MK.ghost, lines:[["note","(replaces 2 line(s))"],["gone","GONE from the page: [e4] Recent: Bluefin Print Co."]]},
+      {L:MK.th, lines:NONE}
+    ].concat(tableRows("none")).concat([{L:MK.more, lines:NONE}])},
+  { url:"finance.example/receivables", badge:["none","No page"], head:{code:"EVIDENCE: no observable change (same URL, no new/removed elements, no value/state changes, no text changes)."}, base:0,
+    cap:"Nothing observable changed: one line of evidence and no page. The base is still reply 1.",
+    rows:[
+      {L:MK.nav("e1","e2"), lines:NONE}, {L:MK.h1("Receivables"), lines:NONE}, {L:MK.filter("Acme"), lines:NONE},
+      {L:MK.sugg, lines:NONE}, {L:MK.th, lines:NONE}
+    ].concat(tableRows("none")).concat([{L:MK.more, lines:NONE}])},
+  { url:"finance.example/receivables?customer=acme-fasteners", badge:["full","Full screen"], head:{text:"New address, whole visible screen"}, base:3,
+    cap:"Picking the customer loads a new address. The old lines describe a different page, so the whole screen goes back and becomes the base.",
+    rows:[
+      {L:MK.nav("e12","e13"), lines:lines("f",['[e12]<a href="/">Finance','[e13]<a href="/logout">Sign out'])},
+      {L:MK.h1("Receivables: Acme Fasteners"), lines:lines("f",["<h1>Receivables: Acme Fasteners"])},
+      {L:MK.filterSet, lines:lines("f",['[e14]<input placeholder="Customer" value="Acme Fasteners">'])},
+      {L:MK.th, lines:lines("f",TH)}
+    ].concat(ACME.map(function(r){return {L:rowMock(r), lines:[["f",rowLine(r)]]};}))}
+];
+var KIND_ORDER = ["chg","new","gone","ctx","f"];
+function rowKind(ls){
+  for(var i=0;i<KIND_ORDER.length;i++){for(var j=0;j<ls.length;j++){if(ls[j][0]===KIND_ORDER[i])return KIND_ORDER[i];}}
+  return "none";
+}
+function conn(kind){return '<svg class="cn cn-'+kind+'" viewBox="0 0 38 14" aria-hidden="true"><path d="M2 7H34"/><path d="M29 2.5L35 7L29 11.5"/></svg>';}
+var rp=$("rp"), rpCap=$("rpCap"), tks=all("#v-reply .tk");
+function renderReply(i, animate){
+  var s=STATES[i], h='', d=0;
+  h+='<div class="colh colh-L">Page</div><div class="colh colh-C"></div><div class="colh colh-R">Reply to the model</div>';
+  h+='<div class="L head"><div class="mk-url">'+s.url+'</div></div><div class="C"></div>';
+  h+='<div class="R head"><span class="badge b-'+s.badge[0]+'">'+s.badge[1]+'</span>'+(s.head.code?'<span class="ln ln-head">'+esc(s.head.code)+'</span>':'<span class="rh-text">'+s.head.text+'</span>')+'</div>';
+  s.rows.forEach(function(r,k){
+    var kind=rowKind(r.lines), last=k===s.rows.length-1?' last':'', dd=kind==="none"?0:d++;
+    h+='<div class="L hl-'+kind+last+'" style="--d:'+dd+'">'+r.L+'</div>';
+    h+='<div class="C" style="--d:'+dd+'">'+(kind==="none"?'':conn(kind))+'</div>';
+    h+='<div class="R'+last+'" style="--d:'+dd+'">'+r.lines.map(function(l){
+      return l[0]==="none"?'<span class="ln ln-none" role="img" aria-label="unchanged, not resent"></span>':'<span class="ln ln-'+l[0]+'">'+esc(l[1])+'</span>';
+    }).join('')+'</div>';
+  });
+  rp.className="rp"; rp.innerHTML=h;
+  if(animate && !reduced){void rp.offsetWidth; rp.className="rp anim";}
+  rpCap.textContent=s.cap;
+  tks.forEach(function(b,k){b.setAttribute("aria-pressed",String(k===i)); b.classList.toggle("is-base",k===s.base);});
+}
+tks.forEach(function(b){b.addEventListener("click",function(){renderReply(+b.getAttribute("data-s"),true);});});
+renderReply(0,false);
+
+/* ---------- Visual 3: evidence ledger ---------- */
+var SIGS=["Request it started","DOM changes","Loading indicator","Other traffic"];
+var IGN=[["ign","ongoing"],["ign","not waited for"]];
+var SCEN=[
+  {act:"click More actions", s:[[["idle","none"],["idle","none"]],[["active","changing"],["done","stopped"]],[["idle","none"],["idle","none"]],IGN],
+   key:[1], r:["ok","Ready","the menu's DOM changes stopped; no request to wait for"]},
+  {act:"click INV-1042", s:[[["active","in flight"],["done","answered"]],[["active","changing"],["done","quiet"]],[["active","\"Loading invoice\""],["done","cleared"]],IGN],
+   key:[0,1,2], r:["ok","Ready","request answered, page drawn, loading bar gone"]},
+  {act:"click INV-1042", s:[[["active","in flight"],["done","answered"]],[["active","changing"],["done","quiet"]],[["active","\"Refreshing balances\""],["warn","still shown"]],IGN],
+   key:[2], r:["warn","Still loading","the reply says so instead of reporting the interim balance"]},
+  {act:"click Save draft", s:[[["active","write sent"],["warn","no answer"]],[["idle","none"],["idle","none"]],[["idle","none"],["idle","none"]],IGN],
+   key:[0], r:["warn","Write unanswered","reported as unanswered, not assumed saved"]}
+];
+var sc=1, ph=3, sTimer=null, sPlay=$("sPlay"), sSeg=all("#v-settle .seg button");
+var PH=["Act","Watch","Settle","Reply"];
+var ARROW='<svg class="mxa ON" viewBox="0 0 22 12" aria-hidden="true"><path d="M2 6H18M14 2.5L19 6L14 9.5"/></svg>';
+function renderSettle(){
+  var c=SCEN[sc], h='';
+  $("sActName").textContent=c.act;
+  $("sActLine").className="act-line"+(ph===0?" on":"");
+  h+='<div class="mxr h"><span></span><span class="'+(ph>=1?'on':'')+'">Right after the action</span><span></span><span class="'+(ph>=2?'on':'')+'">After the wait</span></div>';
+  SIGS.forEach(function(name,k){
+    var a = ph>=1 ? c.s[k][0] : ["wait","waiting"], b = ph>=2 ? c.s[k][1] : ["wait","waiting"];
+    var key = (ph>=3 && c.key.indexOf(k)>=0) ? ' key-'+c.r[0] : '';
+    h+='<div class="mxr'+key+'"><span class="mx-l">'+name+'</span><span class="pill p-'+(a[0]==='active'&&ph!==1?'seen':a[0])+'">'+esc(a[1])+'</span>'+ARROW.replace("ON",ph>=2?"on":"")+'<span class="pill p-'+b[0]+'">'+esc(b[1])+'</span></div>';
+  });
+  $("sMx").innerHTML=h;
+  var v=$("sVerdict");
+  if(ph<3){v.className="verdict idle"; $("sVB").textContent="Waiting"; $("sVS").textContent="not sent yet";}
+  else {v.className="verdict "+c.r[0]; $("sVB").textContent=c.r[1]; $("sVS").textContent=c.r[2];}
+  $("sStatus").textContent = sTimer ? "Playing: "+PH[ph] : (ph===3 ? "Showing the outcome" : "Phase: "+PH[ph]);
+  sSeg.forEach(function(x,k){x.setAttribute("aria-pressed",String(k===sc));});
+}
+function sStop(){if(sTimer){clearInterval(sTimer);sTimer=null;} sPlay.textContent="Play";}
+sPlay.addEventListener("click",function(){
+  if(sTimer){sStop();renderSettle();return;}
+  ph=0; sPlay.textContent="Pause";
+  sTimer=setInterval(function(){ph++; if(ph>=3){ph=3;sStop();} renderSettle();}, reduced?1300:1100);
+  renderSettle();
+});
+$("sStepBtn").addEventListener("click",function(){sStop(); ph = ph>=3 ? 0 : ph+1; renderSettle();});
+$("sReset").addEventListener("click",function(){sStop(); ph=3; renderSettle();});
+function setSettle(i){sStop(); sc=i; ph=3; renderSettle();}
+sSeg.forEach(function(x){x.addEventListener("click",function(){setSettle(+x.getAttribute("data-c"));});});
+renderSettle();
+
+/* ---------- Visual 2: sequence lanes ---------- */
+var FIELDS=["Email","Subject","Message","Note"];
+var bScen=0, bRev=4, bTimer=null, bPlay=$("bPlay"), bSeg=all("#v-batch .seg button");
+function bRun(){return bScen===1?1:4;}
+function step(i, r, lane){
+  var run=bRun(), on=i<r, cls, st;
+  if(i>=run){cls="notrun"; st="not run";}
+  else if(!on){cls="idle"; st="waiting";}
+  else if(bScen===1&&i===0){cls="warn"; st="still loading";}
+  else {cls="ok"; st="checked";}
+  var rail=(i===0?' first':'')+(i===3?' endrow':'')+(lane==="B"&&i+1<r&&i+1<run?' chain':'');
+  return '<div class="bs '+cls+rail+'" style="grid-row:'+(i+2)+'"><b>type '+FIELDS[i]+'</b><span class="st">'+st+'</span></div>';
+}
+function arw(kind, state){return '<span class="arw '+kind+(state?' '+state:'')+'"></span>';}
+function stat(n,label,model){return '<div'+(model?' class="m"':'')+'><b>'+n+'</b><span>'+label+'</span></div>';}
+function renderBatch(){
+  var run=bRun(), r=bRev, a='', b='', head='<div class="hd m">Model</div><div class="hd b">Browser</div>';
+  a+=head; b+=head;
+  for(var i=0;i<4;i++){
+    var on=i<r, rail=(i===0?' first':'')+(i===3?' endrow':'');
+    a+='<div class="mr'+rail+'" style="grid-row:'+(i+2)+'"><span class="call'+(on?'':' idle')+'">Call '+(i+1)+'</span></div>';
+    a+='<div class="cc" style="grid-row:'+(i+2)+'">'+arw("go",on?'':'dim')+arw("back",on?'':'dim')+'</div>';
+    a+=step(i,r,"A");
+    b+='<div class="mr'+rail+'" style="grid-row:'+(i+2)+'">'+(i===0?'<span class="call'+(r>0?'':' idle')+'">Call 1</span>':'')+'</div>';
+    b+='<div class="cc" style="grid-row:'+(i+2)+'">'+arw("go", i===0?(r>0?'':'dim'):'none')+arw("back", i===run-1?(r>=run?'':'dim'):'none')+'</div>';
+    b+=step(i,r,"B");
+  }
+  $("laneA").innerHTML=a; $("laneB").innerHTML=b;
+  $("statsA").innerHTML=stat(r,r===1?"model call":"model calls",true)+stat(r,"browser steps")+stat(r,"checks");
+  $("statsB").innerHTML=stat(r>0?1:0,"model call",true)+stat(r,"browser steps")+stat(r,"checks");
+  $("bStop").hidden=!(bScen===1&&r>=run);
+  $("bStatus").textContent = bTimer ? "Playing step "+r+" of "+run : (r>=run ? "Showing the full sequence" : "Step "+r+" of "+run);
+  bSeg.forEach(function(x,k){x.setAttribute("aria-pressed",String(k===bScen));});
+}
+function bStopT(){if(bTimer){clearInterval(bTimer);bTimer=null;} bPlay.textContent="Play";}
+bPlay.addEventListener("click",function(){
+  if(bTimer){bStopT();renderBatch();return;}
+  if(bRev>=bRun())bRev=0;
+  bRev++;
+  if(bRev>=bRun()){renderBatch();return;}
+  bPlay.textContent="Pause";
+  bTimer=setInterval(function(){ if(bRev<bRun())bRev++; if(bRev>=bRun())bStopT(); renderBatch(); }, reduced?1300:1000);
+  renderBatch();
+});
+$("bStepBtn").addEventListener("click",function(){bStopT(); if(bRev>=bRun())bRev=0; bRev++; renderBatch();});
+$("bReset").addEventListener("click",function(){bStopT(); bRev=bRun(); renderBatch();});
+function setBatch(i){bStopT(); bScen=i; bRev=bRun(); renderBatch();}
+bSeg.forEach(function(x){x.addEventListener("click",function(){setBatch(+x.getAttribute("data-b"));});});
+renderBatch();
+
+all('.reflist .src a').forEach(function(a){a.innerHTML=esc(a.textContent).split('/').join('/<wbr>');});
+
+/* ---------- In-page links ---------- */
+function landOn(t){
+  var done=false;
+  function fix(){
+    if(done) return; done=true;
+    var m=parseFloat(getComputedStyle(t).scrollMarginTop)||0, top=t.getBoundingClientRect().top;
+    if(Math.abs(top-m)>3) t.scrollIntoView({behavior:"auto", block:"start"});
+  }
+  if("onscrollend" in window) window.addEventListener("scrollend",fix,{once:true});
+  setTimeout(fix, reduced?60:1500);
+}
+function goToId(id, push){
+  var t=document.getElementById(id); if(!t) return false;
+  t.scrollIntoView({behavior: (reduced||!push)?"auto":"smooth", block:"start"});
+  landOn(t);
+  if(!t.hasAttribute("tabindex")) t.setAttribute("tabindex","-1");
+  try{ t.focus({preventScroll:true}); }catch(e){}
+  all(".is-target").forEach(function(x){x.classList.remove("is-target");});
+  t.classList.add("is-target");
+  if(push){ try{ history.pushState(null,"","#"+id); }catch(e){} }
+  return true;
+}
+document.addEventListener("click",function(e){
+  var a=e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+  if(!a || e.defaultPrevented || e.button!==0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  var id=decodeURIComponent(a.getAttribute("href").slice(1));
+  if(id && goToId(id,true)) e.preventDefault();
+});
+window.addEventListener("popstate",function(){ var id=location.hash.slice(1); if(id) goToId(id,false); });
+if(location.hash.length>1){
+  var startId=location.hash.slice(1);
+  setTimeout(function(){ goToId(startId,false); },80);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ goToId(startId,false); });
+  window.addEventListener("load",function(){ goToId(startId,false); });
+}
+
+/* ---------- Copy command ---------- */
+var copyBtn=$("copyCmd");
+if(copyBtn){copyBtn.addEventListener("click",function(){
+  var t=$("cmdText").textContent;
+  function done(ok){copyBtn.textContent=ok?"Copied":"Select and copy"; setTimeout(function(){copyBtn.textContent="Copy";},2000);}
+  try{navigator.clipboard.writeText(t).then(function(){done(true);},function(){done(false);});}catch(e){done(false);}
+});}
+
+/* ---------- Prediction questions ---------- */
+function goTo(fig, titleId, fn){
+  return function(){
+    fn();
+    var el=$(fig);
+    el.scrollIntoView({behavior: reduced?"auto":"smooth", block:"start"});
+    var t=$(titleId); if(t) t.focus({preventScroll:true});
+  };
+}
+var QS=[
+  {right:2, fb:[
+    "Not quite. That page never reached the model, so a change list against it would describe edits to text the model has never seen.",
+    "Not quite, though it is the tempting answer: the model did see that page. After a withheld reply, pilotfish prints whole screens, and stops calling earlier refs valid, until a whole screen is delivered again.",
+    "Right. The withheld page cannot be a base, so the next action prints its whole screen. Once that reply is delivered, it becomes the base and change lists resume."]},
+  {right:1, fb:[
+    "Not quite. A quiet network and DOM say the action's own work is done, not that the page is. The source records a case where a model answered from an interim figure shown under the page's own loading label.",
+    "Right. The page's own loading signal outranks a quiet DOM. The diagram below shows how each piece of evidence feeds the reply.",
+    "Not quite. The refresh bar is part of the page itself, so it can be read from the DOM without pixels."],
+   go:{label:"Show this case below", fn:goTo("v-settle","sTitle",function(){setSettle(2);})}},
+  {right:1, fb:[
+    "Not quite. Their values do not, but the page might. A form that is still loading can re-render or replace fields, so later steps would act on a page that is still changing.",
+    "Right. A page still loading after a step ends the batch, and the reply says which steps were not run.",
+    "Not quite. Whether to retry, wait or move on is a judgment about the page. The batch hands that judgment back to the model instead of making it."],
+   go:{label:"Show this case below", fn:goTo("v-batch","bTitle",function(){setBatch(1);})}}
+];
+all(".q").forEach(function(box){
+  var q=QS[+box.getAttribute("data-q")], btns=Array.prototype.slice.call(box.querySelectorAll(".q-opts button")), fb=box.querySelector(".q-fb");
+  btns.forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var o=+btn.getAttribute("data-o");
+      btns.forEach(function(x,k){
+        x.setAttribute("aria-pressed",String(k===o));
+        x.classList.toggle("right",k===q.right);
+        x.classList.toggle("wrong",k===o&&o!==q.right);
+      });
+      fb.innerHTML='<p>'+esc(q.fb[o])+'</p>'+(q.go?'<div class="go"><button type="button" class="btn">'+q.go.label+'</button></div>':'');
+      if(q.go) fb.querySelector(".go button").addEventListener("click",q.go.fn);
+    });
+  });
+});
+})();
+</script>
+</body></html>
